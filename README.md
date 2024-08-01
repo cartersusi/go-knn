@@ -8,7 +8,7 @@ Current distance function support:
 
 ---
 
-This library is intended to be lightweight and quick KNN search with "good enough" accuracy for reasonably sized datasets. e.g small business e-comm, blogs, etc...
+This library is intended to be lightweight and quick KNN search for reasonably sized datasets. e.g small business e-comm, blogs, etc...
 
 For a more advanced implementation, see libraries:
 * FAISS - https://github.com/facebookresearch/faiss
