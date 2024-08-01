@@ -3,9 +3,8 @@ package knn
 import (
 	"container/heap"
 	"errors"
+	"fmt"
 	"math"
-	"runtime"
-	"sync"
 )
 
 type KNN struct {
@@ -15,12 +14,42 @@ type KNN struct {
 	distance func([]float64, []float64) (float64, error)
 }
 
+type Result struct {
+	Index    int
+	Distance float64
+}
+
+type MinHeap []Result
+
+func (h MinHeap) Len() int           { return len(h) }
+func (h MinHeap) Less(i, j int) bool { return h[i].Distance > h[j].Distance } // inverted to keep max on top
+func (h MinHeap) Swap(i, j int)      { h[i], h[j] = h[j], h[i] }
+
+func (h *MinHeap) Push(x interface{}) {
+	*h = append(*h, x.(Result))
+}
+
+func (h *MinHeap) Pop() interface{} {
+	old := *h
+	n := len(old)
+	x := old[n-1]
+	*h = old[0 : n-1]
+	return x
+}
+
+func check_slices(a, b []float64) error {
+	if a == nil || b == nil {
+		return errors.New("input slices must not be nil")
+	}
+	if len(a) != len(b) {
+		return errors.New("input slices must have the same length")
+	}
+	return nil
+}
+
 func NewKNN(k int, data [][]float64, target []float64, distance func([]float64, []float64) (float64, error)) (*KNN, error) {
 	if k <= 0 {
 		return nil, errors.New("k must be a positive integer")
-	}
-	if k != len(target) || k != len(data[0]) {
-		return nil, errors.New("k must be equal to the length of the target and data")
 	}
 	if len(data) == 0 {
 		return nil, errors.New("data must not be empty")
@@ -32,12 +61,7 @@ func NewKNN(k int, data [][]float64, target []float64, distance func([]float64, 
 		return nil, errors.New("distance function must not be nil")
 	}
 
-	for i := 0; i < len(data); i++ {
-		if len(data[i]) != len(target) {
-			return nil, errors.New("data and target must have the same length")
-		}
-	}
-
+	fmt.Printf("NewKNN: k=%d, data=%d:%d, target=%d\n", k, len(data), len(data[0]), len(target))
 	return &KNN{
 		k:        k,
 		data:     data,
@@ -46,122 +70,62 @@ func NewKNN(k int, data [][]float64, target []float64, distance func([]float64, 
 	}, nil
 }
 
-type Result struct {
-	Index    int
-	Distance int
-}
-
-type ResultHeap []Result
-
-func (h ResultHeap) Len() int           { return len(h) }
-func (h ResultHeap) Less(i, j int) bool { return h[i].Distance < h[j].Distance }
-func (h ResultHeap) Swap(i, j int)      { h[i], h[j] = h[j], h[i] }
-
-func (h *ResultHeap) Push(x interface{}) {
-	*h = append(*h, x.(Result))
-}
-
-func (h *ResultHeap) Pop() interface{} {
-	old := *h
-	n := len(old)
-	x := old[n-1]
-	*h = old[0 : n-1]
-	return x
-}
-
+// L1Distance calculates the L1 (Manhattan) distance between two points
 func L1Distance(a, b []float64) (float64, error) {
-	if a == nil || b == nil {
-		return 0, errors.New("input slices must not be nil")
+	err := check_slices(a, b)
+	if err != nil {
+		return 0, err
 	}
-	numChunks := runtime.NumCPU()
-	chunkSize := len(a) / numChunks
 
-	var wg sync.WaitGroup
-	wg.Add(numChunks)
-
-	var mu sync.Mutex
 	var result float64
-
-	chunkCalc := func(start, end int) {
-		defer wg.Done()
-		var chunkSum float64
-		for i := start; i < end; i++ {
-			chunkSum += math.Abs(a[i] - b[i])
-		}
-		mu.Lock()
-		result += chunkSum
-		mu.Unlock()
+	for i := 0; i < len(a); i++ {
+		result += math.Abs(a[i] - b[i])
 	}
-
-	for i := 0; i < numChunks; i++ {
-		start := i * chunkSize
-		end := (i + 1) * chunkSize
-		if i == numChunks-1 {
-			end = len(a)
-		}
-		go chunkCalc(start, end)
-	}
-
-	wg.Wait()
 
 	return result, nil
 }
 
-func (knn *KNN) Search() ([]int, error) {
-	results := make(chan Result)
-	var wg sync.WaitGroup
-
-	errors := make(chan error)
-	var searchErr error
-
-	for i, dataPoint := range knn.data {
-		wg.Add(1)
-
-		go func(i int, dataPoint []float64) {
-			defer wg.Done()
-			distance, err := knn.distance(dataPoint, knn.target)
-			if err != nil {
-				errors <- err
-				return
-			}
-
-			results <- Result{Index: i, Distance: int(distance)}
-		}(i, dataPoint)
+// L2Distance calculates the Euclidean distance between two points
+func L2Distance(a, b []float64) (float64, error) {
+	err := check_slices(a, b)
+	if err != nil {
+		return 0, err
 	}
 
-	h := &ResultHeap{}
+	var sum float64
+	for i := 0; i < len(a); i++ {
+		sum += math.Pow(a[i]-b[i], 2)
+	}
+	return math.Sqrt(sum), nil
+}
+
+func (knn *KNN) Search() ([]int, error) {
+	h := &MinHeap{}
 	heap.Init(h)
 
-	go func() {
-		for result := range results {
-			if h.Len() < knn.k {
-				heap.Push(h, result)
-			} else if result.Distance < (*h)[0].Distance {
-				heap.Pop(h)
-				heap.Push(h, result)
-			}
+	for i, dataPoint := range knn.data {
+		distance, err := knn.distance(dataPoint, knn.target)
+		if err != nil {
+			return nil, err
 		}
-	}()
 
-	go func() {
-		for err := range errors {
-			searchErr = err
+		if h.Len() < knn.k {
+			heap.Push(h, Result{Index: i, Distance: distance})
+		} else if distance < (*h)[0].Distance {
+			heap.Pop(h)
+			heap.Push(h, Result{Index: i, Distance: distance})
 		}
-	}()
-
-	wg.Wait()
-	close(results)
-	close(errors)
-
-	if searchErr != nil {
-		return nil, searchErr
 	}
 
-	var topK []int
+	var indices []int
 	for h.Len() > 0 {
 		result := heap.Pop(h).(Result)
-		topK = append(topK, result.Index)
+		indices = append(indices, result.Index)
 	}
 
-	return topK, nil
+	for i, j := 0, len(indices)-1; i < j; i, j = i+1, j-1 {
+		indices[i], indices[j] = indices[j], indices[i]
+	}
+
+	return indices, nil
 }

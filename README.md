@@ -119,13 +119,17 @@ func main() {
 
 	target = float32ToFloat64(targetResponse.Data[0].Embedding)
 
-	knn, err := knn.NewKNN(len(target), data, target, knn.L1Distance)
+	knn, err := knn.NewKNN(len(target), data, target, knn.L1Distance) // Use L2Distance for Euclidean distance
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
 
-	indices := knn.Search()
+	indices, err := knn.Search()
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
 
 	fmt.Println("Nearerst neighbor:", sentences[indices[0]])
 	fmt.Println("Indices of k nearest neighbors:", indices)
