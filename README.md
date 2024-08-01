@@ -1,4 +1,6 @@
 # Go KNN
+[![Go Reference](https://pkg.go.dev/badge/github.com/carter4299/go-knn.svg)](https://pkg.go.dev/github.com/carter4299/go-knn)
+
 This library is a simple KNN Search for embeddings.\
 Current distance function support:
 * L1Distance(Manhattan)
