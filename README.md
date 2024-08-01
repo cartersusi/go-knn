@@ -15,7 +15,7 @@ For a more advanced implementation, see libraries:
 
 ## Installation
 ```sh
-go get github.com/carter4299/goknn
+go get github.com/carter4299/go-knn
 ```
 
 ## Usage
@@ -25,7 +25,7 @@ package main
 import (
 	"fmt"
 
-	knn "github.com/carter4299/goknn"
+	knn "github.com/carter4299/go-knn"
 )
 
 func main() {
@@ -62,6 +62,7 @@ import (
 	"fmt"
 	"log"
 
+	knn "github.com/carter4299/go-knn"
 	openai "github.com/sashabaranov/go-openai"
 )
 
@@ -118,7 +119,7 @@ func main() {
 
 	target = float32ToFloat64(targetResponse.Data[0].Embedding)
 
-	knn, err := NewKNN(len(target), data, target, L1Distance)
+	knn, err := knn.NewKNN(len(target), data, target, knn.L1Distance)
 	if err != nil {
 		fmt.Println(err)
 		return
