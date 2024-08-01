@@ -4,6 +4,7 @@
 This library is a simple KNN Search for embeddings.\
 Current distance function support:
 * L1Distance(Manhattan)
+* L2Distance(Euclidean)
 
 ---
 

@@ -85,7 +85,7 @@ func L1Distance(a, b []float64) (float64, error) {
 	return result, nil
 }
 
-// L2Distance calculates the Euclidean distance between two points
+// L2Distance calculates the L2 (Euclidean) distance between two points
 func L2Distance(a, b []float64) (float64, error) {
 	err := check_slices(a, b)
 	if err != nil {
