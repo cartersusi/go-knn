@@ -22,7 +22,7 @@ type Result struct {
 type MinHeap []Result
 
 func (h MinHeap) Len() int           { return len(h) }
-func (h MinHeap) Less(i, j int) bool { return h[i].Distance > h[j].Distance } // inverted to keep max on top
+func (h MinHeap) Less(i, j int) bool { return h[i].Distance > h[j].Distance }
 func (h MinHeap) Swap(i, j int)      { h[i], h[j] = h[j], h[i] }
 
 func (h *MinHeap) Push(x interface{}) {
@@ -70,7 +70,6 @@ func NewKNN(k int, data [][]float64, target []float64, distance func([]float64, 
 	}, nil
 }
 
-// L1Distance calculates the L1 (Manhattan) distance between two points
 func L1Distance(a, b []float64) (float64, error) {
 	err := check_slices(a, b)
 	if err != nil {
@@ -85,7 +84,6 @@ func L1Distance(a, b []float64) (float64, error) {
 	return result, nil
 }
 
-// L2Distance calculates the L2 (Euclidean) distance between two points
 func L2Distance(a, b []float64) (float64, error) {
 	err := check_slices(a, b)
 	if err != nil {
