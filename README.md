@@ -90,7 +90,7 @@ import (
 	"fmt"
 	"log"
 
-	knn "github.com/carter4299/go-knn"
+	goknn "github.com/carter4299/go-knn"
 	openai "github.com/sashabaranov/go-openai"
 )
 
