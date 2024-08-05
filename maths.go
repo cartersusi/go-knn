@@ -5,15 +5,15 @@ import (
 	"math"
 )
 
-func Einsum(query []float64, database [][]float64) ([]float64, error) {
-	if query == nil || database == nil {
+func Einsum(qy []float64, db [][]float64) ([]float64, error) {
+	if qy == nil || db == nil {
 		return nil, errors.New("input slices must not be nil")
 	}
-	qCols := len(query)
-	dRows, dCols := len(database), len(database[0])
+	qCols := len(qy)
+	dRows, dCols := len(db), len(db[0])
 
 	if qCols != dCols {
-		return nil, errors.New("query and database must have the same number of columns")
+		return nil, errors.New("input slices have the same number of columns")
 	}
 
 	result := make([]float64, dRows)
@@ -21,7 +21,7 @@ func Einsum(query []float64, database [][]float64) ([]float64, error) {
 	for j := 0; j < dRows; j++ {
 		sum := 0.0
 		for k := 0; k < qCols; k++ {
-			sum += query[k] * database[j][k]
+			sum += qy[k] * db[j][k]
 		}
 		result[j] = sum
 	}
@@ -30,18 +30,18 @@ func Einsum(query []float64, database [][]float64) ([]float64, error) {
 }
 
 func HalfNorm(db [][]float64) []float64 {
-	numDatabase := len(db)
-	halfNorm := make([]float64, numDatabase)
+	num_db := len(db)
+	result := make([]float64, num_db)
 
-	for i := 0; i < numDatabase; i++ {
-		sumSquares := 0.0
+	for i := 0; i < num_db; i++ {
+		sum_squares := 0.0
 		for j := 0; j < len(db[i]); j++ {
-			sumSquares += db[i][j] * db[i][j]
+			sum_squares += db[i][j] * db[i][j]
 		}
-		halfNorm[i] = 0.5 * sumSquares
+		result[i] = 0.5 * sum_squares
 	}
 
-	return halfNorm
+	return result
 }
 
 func Euclidean(a, b []float64) (float64, error) {

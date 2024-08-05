@@ -6,29 +6,6 @@ import (
 	"fmt"
 )
 
-type Result struct {
-	Index    int
-	Distance float64
-}
-
-type MinHeap []Result
-
-func (h MinHeap) Len() int           { return len(h) }
-func (h MinHeap) Less(i, j int) bool { return h[i].Distance > h[j].Distance }
-func (h MinHeap) Swap(i, j int)      { h[i], h[j] = h[j], h[i] }
-
-func (h *MinHeap) Push(x interface{}) {
-	*h = append(*h, x.(Result))
-}
-
-func (h *MinHeap) Pop() interface{} {
-	old := *h
-	n := len(old)
-	x := old[n-1]
-	*h = old[0 : n-1]
-	return x
-}
-
 func L1nns(qy []float64, db [][]float64, k int) ([]int, []float64, error) {
 	if qy == nil || db == nil {
 		return nil, nil, errors.New("input slices must not be nil")
@@ -44,8 +21,8 @@ func L1nns(qy []float64, db [][]float64, k int) ([]int, []float64, error) {
 	h := &MinHeap{}
 	heap.Init(h)
 
-	for i, dataPoint := range db {
-		distance, err := Euclidean(dataPoint, qy)
+	for i, dp := range db {
+		distance, err := Euclidean(dp, qy)
 		if err != nil {
 			return nil, nil, err
 		}

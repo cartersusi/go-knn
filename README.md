@@ -68,27 +68,30 @@ package main
 
 import (
 	"fmt"
-
-	knn "github.com/carter4299/go-knn"
+	goknn "github.com/carter4299/go-knn"
 )
-
 func main() {
 	database := [][]float64{
-		{0.1, 0.2, 0.3},
-		{0.4, 0.5, 0.6},
-		{0.7, 0.8, 0.9},
+		{0.1, 0.2, 0.3, 0.4, 0.5, 0.6},
+		{0.4, 0.5, 0.6, 0.7, 0.8, 0.9},
+		{0.7, 0.8, 0.9, 0.1, 0.2, 0.3},
 	}
-	query := []float64{0.2, 0.3, 0.4}
+	query := []float64{0.2, 0.3, 0.4, 0.5, 0.6, 0.7}
 
-	indices, values, err := knn.L2nns(query, database, len(query))
+	knn := &goknn.New{
+		Data: database,
+		K:    2,
+	}
+
+	indices, values, err := knn.Search(query, "L2")
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
 
 	fmt.Println("Nearerst neighbor:", database[indices[0]])
-	fmt.Println("Indices:", indices[0:3])
-	fmt.Println("Values:", values[0:3])
+	fmt.Println("Indices:", indices)
+	fmt.Println("Values:", values)
 }
 ```
 
@@ -158,7 +161,12 @@ func main() {
 
 	query = float32ToFloat64(queryResponse.Data[0].Embedding)
 
-	indices, values, err := knn.MIPS(query, database, 2, knn.MipsOptions{BinSize: 1})
+	knn := &goknn.New{
+		Data: database,
+		K:    2,
+	}
+
+	indices, values, err := knn.Search(query, "MIPS", goknn.MipsOptions{BinSize: 2})
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -173,12 +181,12 @@ func main() {
 ```
 Output:
 ```
-MIPS: qy=1536, db=7:1536, k=2, bs=1
+MIPS: qy=1536, db=7:1536, k=2, bs=2
 Query Sentence: I am a scientist who enjoys fishing when I'm not in the lab.
 Nearerst neighbor[0]: The scientist enjoys conducting experiments in the laboratory.
 Nearerst neighbor[1]: The sailor enjoys sailing on a boat in the sea.
 Indices: [5 0]
-Values: [0.877343524625263 0.8281978852988777]
+Values: [0.8774271924221423 0.828193179347956]
 ```
 
 ## Sources:

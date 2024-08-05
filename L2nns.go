@@ -1,19 +1,10 @@
 package knn
 
 import (
+	"container/heap"
 	"errors"
 	"fmt"
-	"sort"
 )
-
-type pair struct {
-	index int
-	value float64
-}
-
-type L2nnsOptions struct {
-	RecallTarget float64
-}
 
 func L2nns(qy []float64, db [][]float64, k int, opts ...L2nnsOptions) ([]int, []float64, error) {
 	if qy == nil || db == nil {
@@ -41,11 +32,11 @@ func L2nns(qy []float64, db [][]float64, k int, opts ...L2nnsOptions) ([]int, []
 		return nil, nil, err
 	}
 
-	dbHalfNorm := HalfNorm(db)
+	db_halfnorm := HalfNorm(db)
 
 	dists := make([]float64, len(scores))
 	for i := range scores {
-		dists[i] = dbHalfNorm[i] - scores[i]
+		dists[i] = db_halfnorm[i] - scores[i]
 	}
 
 	return approxMinK(dists, k, recall_target)
@@ -60,30 +51,32 @@ func approxMinK(dists []float64, k int, recallTarget float64) ([]int, []float64,
 		k = len(dists)
 	}
 
-	pairs := make([]pair, len(dists))
-	for i, v := range dists {
-		pairs[i] = pair{i, v}
+	n_samples := int(float64(k) / recallTarget)
+	if n_samples > len(dists) {
+		n_samples = len(dists)
 	}
 
-	sort.Slice(pairs, func(i, j int) bool {
-		return pairs[i].value < pairs[j].value
-	})
-
-	numSamples := int(float64(k) / recallTarget)
-	if numSamples > len(dists) {
-		numSamples = len(dists)
+	sampled_dists := make([]float64, n_samples)
+	for i := range sampled_dists {
+		sampled_dists[i] = dists[i]
 	}
 
-	samples := pairs[:numSamples]
-	sort.Slice(samples, func(i, j int) bool {
-		return samples[i].value < samples[j].value
-	})
+	h := &MinHeap{}
+	heap.Init(h)
+
+	for i, v := range sampled_dists {
+		heap.Push(h, Result{Index: i, Distance: v})
+		if h.Len() > k {
+			heap.Pop(h)
+		}
+	}
 
 	indices := make([]int, k)
 	values := make([]float64, k)
 	for i := 0; i < k; i++ {
-		indices[i] = samples[i].index
-		values[i] = samples[i].value
+		result := heap.Pop(h).(Result)
+		indices[i] = result.Index
+		values[i] = result.Distance
 	}
 
 	return indices, values, nil

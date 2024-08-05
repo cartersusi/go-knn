@@ -5,10 +5,6 @@ import (
 	"fmt"
 )
 
-type MipsOptions struct {
-	BinSize int
-}
-
 func MIPS(qy []float64, db [][]float64, k int, opts ...MipsOptions) ([]int, []float64, error) {
 	if qy == nil || db == nil {
 		return nil, nil, errors.New("input slices must not be nil")
