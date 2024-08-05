@@ -26,13 +26,11 @@ func L2nns(qy []float64, db [][]float64, k int, opts ...L2nnsOptions) ([]int, []
 		return nil, nil, errors.New("k must be a positive integer")
 	}
 
-	var recall_target float64
+	recall_target := 0.95
 	if len(opts) > 0 {
 		recall_target = opts[0].RecallTarget
-	} else {
-		recall_target = 0.95
 	}
-	if recall_target < 0 || recall_target > 1 {
+	if !(0 < recall_target && recall_target <= 1) {
 		return nil, nil, fmt.Errorf("recall_target must be between 0 and 1")
 	}
 

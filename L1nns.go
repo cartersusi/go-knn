@@ -23,10 +23,10 @@ func (h *MinHeap) Push(x interface{}) {
 }
 
 func (h *MinHeap) Pop() interface{} {
-	old := *h
-	n := len(old)
-	x := old[n-1]
-	*h = old[0 : n-1]
+	tmp := *h
+	n := len(tmp)
+	x := tmp[n-1]
+	*h = tmp[0 : n-1]
 	return x
 }
 
