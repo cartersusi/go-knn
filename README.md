@@ -19,6 +19,30 @@ For a more advanced implementation, see libraries:
 go get github.com/carter4299/go-knn
 ```
 
+## Functions
+
+#### L2nns
+
+```go 
+type L2nnsOptions struct {
+	RecallTarget float64
+}
+func L2nns(qy []float64, db [][]float64, k int, opts ...L2nnsOptions) ([]int, []float64, error)
+
+// Default recall_target=0.95
+indices, values, err := knn.L2nns(query, database, len(query))
+
+// Define a recall target value with:
+knn.L2nns(query, database, len(query), knn.L2nnsOptions{RecallTarget: 0.90})
+```
+
+#### L1nns
+```go 
+func L1nns(qy []float64, db [][]float64, k int) ([]int, []float64, error)
+
+indices, values, err := knn.L1nns(query, database, len(query))
+```
+
 ## Usage
 ```go
 package main
@@ -30,31 +54,26 @@ import (
 )
 
 func main() {
-	embeddings := [][]float64{
+	database := [][]float64{
 		{0.1, 0.2, 0.3},
 		{0.4, 0.5, 0.6},
 		{0.7, 0.8, 0.9},
 	}
-	target := []float64{0.2, 0.3, 0.4}
+	query := []float64{0.2, 0.3, 0.4}
 
-	knn, err := knn.NewKNN(len(target), embeddings, target, knn.L1Distance)
+	indices, values, err := knn.L1nns(query, database, len(query))
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
 
-	indices, err := knn.Search()
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-
-	fmt.Println("Nearerst neighbor:", embeddings[indices[0]])
-	fmt.Println("Indices of k nearest neighbors:", indices)
+	fmt.Println("Nearerst neighbor:", database[indices[0]])
+	fmt.Println("Indices:", indices[0:3])
+	fmt.Println("Values:", values[0:3])
 }
 ```
 
-## Full Example using OpenAI Ada
+## Example using OpenAI Ada
 ```go
 package main
 
@@ -89,10 +108,10 @@ func main() {
 		"The teacher enjoys teaching students in the classroom.",
 	}
 
-	target_sentence := "I am a fisherman who enjoys fishing on my boat."
+	query_sentence := "I am a scientist who enjoys fishing when I'm not in the lab."
 
-	var target []float64
-	var data [][]float64
+	var query []float64
+	var database [][]float64
 
 	for _, sentence := range sentences {
 		queryReq := openai.EmbeddingRequest{
@@ -105,39 +124,39 @@ func main() {
 			log.Fatal("Error creating query embedding:", err)
 		}
 
-		data = append(data, float32ToFloat64(queryResponse.Data[0].Embedding))
+		database = append(database, float32ToFloat64(queryResponse.Data[0].Embedding))
 	}
 
-	targetReq := openai.EmbeddingRequest{
-		Input: []string{target_sentence},
+	queryReq := openai.EmbeddingRequest{
+		Input: []string{query_sentence},
 		Model: openai.AdaEmbeddingV2,
 	}
 
-	targetResponse, err := client.CreateEmbeddings(context.Background(), targetReq)
+	queryResponse, err := client.CreateEmbeddings(context.Background(), queryReq)
 	if err != nil {
 		log.Fatal("Error creating target embedding:", err)
 	}
 
-	target = float32ToFloat64(targetResponse.Data[0].Embedding)
+	query = float32ToFloat64(queryResponse.Data[0].Embedding)
 
-	knn, err := knn.NewKNN(len(target), data, target, knn.L1Distance) // Use L2Distance for Euclidean distance
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-
-	indices, err := knn.Search()
+	indices, values, err := knn.L2nns(query, database, len(database), knn.L2nnsOptions{RecallTarget: 0.90})
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
 
 	fmt.Println("Nearerst neighbor:", sentences[indices[0]])
-	fmt.Println("Indices of k nearest neighbors:", indices)
+	fmt.Println("Indices:", indices[0:3])
+	fmt.Println("Values:", values[0:3])
 }
 ```
 Output:
 ```
-Nearerst neighbor: The sailor enjoys sailing on a boat in the sea.
-Indices of k nearest neighbors: [0 3 1 5 4 2 6]
+L2nns: qy=1536, db=7:1536, k=7, rt=0.900000
+Nearerst neighbor: The scientist enjoys conducting experiments in the laboratory.
+Indices: [5 0 3]
+Values: [-0.3774270905672783 -0.3281931648621844 -0.3206193134616744]
 ```
+
+## Sources:
+**[TPU-KNN: K Nearest Neighbor Search at Peak FLOP/s](https://arxiv.org/abs/2206.14286)**
