@@ -32,7 +32,7 @@ func MIPS(qy []float64, db [][]float64, k int, opts ...MipsOptions) ([]int, []fl
 // Default bin_size=2
 indices, values, err := knn.MIPS(query, database, len(query))
 
-// Define a recall target value with:
+// Define a bin size value with:
 knn.MIPS(query, database, len(query), knn.MipsOptions{BinSize: 4})
 ```
 
