@@ -28,9 +28,9 @@ func (s *New) Search(qy []float64, searchType string, opts ...SearchOptions) ([]
 			if !ok {
 				return nil, nil, errors.New("invalid options for L2nns")
 			}
-			return L2nns(qy, s.Data, s.K, l2nnsOpts)
+			return L2(qy, s.Data, s.K, l2nnsOpts)
 		}
-		return L2nns(qy, s.Data, s.K)
+		return L2(qy, s.Data, s.K)
 	case "MIPS":
 		if len(opts) > 0 {
 			mipsOpts, ok := opts[0].(MipsOptions)
@@ -41,7 +41,7 @@ func (s *New) Search(qy []float64, searchType string, opts ...SearchOptions) ([]
 		}
 		return MIPS(qy, s.Data, s.K)
 	case "L1":
-		return L1nns(qy, s.Data, s.K)
+		return L1(qy, s.Data, s.K)
 	default:
 		s.ListSearchTypes()
 		return nil, nil, errors.New("search type not supported")

@@ -6,7 +6,7 @@ import (
 	"fmt"
 )
 
-func L2nns(qy []float64, db [][]float64, k int, opts ...L2nnsOptions) ([]int, []float64, error) {
+func L2(qy []float64, db [][]float64, k int, opts ...L2nnsOptions) ([]int, []float64, error) {
 	if qy == nil || db == nil {
 		return nil, nil, errors.New("input slices must not be nil")
 	}

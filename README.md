@@ -28,38 +28,24 @@ type MipsOptions struct {
 }
 
 func MIPS(qy []float64, db [][]float64, k int, opts ...MipsOptions) ([]int, []float64, error)
-
-// Default bin_size=2
-indices, values, err := knn.MIPS(query, database, len(query))
-
-// Define a bin size value with:
-knn.MIPS(query, database, len(query), knn.MipsOptions{BinSize: 4})
 ```
 
 ---
 
-#### L2nns
+#### L2
 
 ```go 
 type L2nnsOptions struct {
 	RecallTarget float64
 }
-func L2nns(qy []float64, db [][]float64, k int, opts ...L2nnsOptions) ([]int, []float64, error)
-
-// Default recall_target=0.95
-indices, values, err := knn.L2nns(query, database, len(query))
-
-// Define a recall target value with:
-knn.L2nns(query, database, len(query), knn.L2nnsOptions{RecallTarget: 0.90})
+func L2(qy []float64, db [][]float64, k int, opts ...L2nnsOptions) ([]int, []float64, error)
 ```
 
 ---
 
-#### L1nns
+#### L1
 ```go 
-func L1nns(qy []float64, db [][]float64, k int) ([]int, []float64, error)
-
-indices, values, err := knn.L1nns(query, database, len(query))
+func L1(qy []float64, db [][]float64, k int) ([]int, []float64, error)
 ```
 
 ## Usage
