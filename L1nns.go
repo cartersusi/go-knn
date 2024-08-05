@@ -4,7 +4,6 @@ import (
 	"container/heap"
 	"errors"
 	"fmt"
-	"math"
 )
 
 type Result struct {
@@ -23,10 +22,10 @@ func (h *MinHeap) Push(x interface{}) {
 }
 
 func (h *MinHeap) Pop() interface{} {
-	tmp := *h
-	n := len(tmp)
-	x := tmp[n-1]
-	*h = tmp[0 : n-1]
+	old := *h
+	n := len(old)
+	x := old[n-1]
+	*h = old[0 : n-1]
 	return x
 }
 
@@ -46,7 +45,7 @@ func L1nns(qy []float64, db [][]float64, k int) ([]int, []float64, error) {
 	heap.Init(h)
 
 	for i, dataPoint := range db {
-		distance, err := L1Distance(dataPoint, qy)
+		distance, err := Euclidean(dataPoint, qy)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -72,28 +71,4 @@ func L1nns(qy []float64, db [][]float64, k int) ([]int, []float64, error) {
 	}
 
 	return indices, values, nil
-}
-
-func check_slices(a, b []float64) error {
-	if a == nil || b == nil {
-		return errors.New("input slices must not be nil")
-	}
-	if len(a) != len(b) {
-		return errors.New("input slices must have the same length")
-	}
-	return nil
-}
-
-func L1Distance(a, b []float64) (float64, error) {
-	err := check_slices(a, b)
-	if err != nil {
-		return 0, err
-	}
-
-	var result float64
-	for i := 0; i < len(a); i++ {
-		result += math.Abs(a[i] - b[i])
-	}
-
-	return result, nil
 }

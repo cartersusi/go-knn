@@ -1,10 +1,10 @@
 # Go KNN
 [![Go Reference](https://pkg.go.dev/badge/github.com/carter4299/go-knn.svg)](https://pkg.go.dev/github.com/carter4299/go-knn)
 
-This library is a simple KNN Search for embeddings.\
-Current distance function support:
+This library is a simple KNN Search for embeddings.
 * L1Distance(Manhattan)
 * L2Distance(Euclidean)
+* MIPS (Maximum Inner Product Search)
 
 ---
 
@@ -21,6 +21,23 @@ go get github.com/carter4299/go-knn
 
 ## Functions
 
+#### MIPS
+```go
+type MipsOptions struct {
+	BinSize int
+}
+
+func MIPS(qy []float64, db [][]float64, k int, opts ...MipsOptions) ([]int, []float64, error)
+
+// Default bin_size=2
+indices, values, err := knn.MIPS(query, database, len(query))
+
+// Define a recall target value with:
+knn.MIPS(query, database, len(query), knn.MipsOptions{BinSize: 4})
+```
+
+---
+
 #### L2nns
 
 ```go 
@@ -35,6 +52,8 @@ indices, values, err := knn.L2nns(query, database, len(query))
 // Define a recall target value with:
 knn.L2nns(query, database, len(query), knn.L2nnsOptions{RecallTarget: 0.90})
 ```
+
+---
 
 #### L1nns
 ```go 
@@ -61,7 +80,7 @@ func main() {
 	}
 	query := []float64{0.2, 0.3, 0.4}
 
-	indices, values, err := knn.L1nns(query, database, len(query))
+	indices, values, err := knn.L2nns(query, database, len(query))
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -139,23 +158,27 @@ func main() {
 
 	query = float32ToFloat64(queryResponse.Data[0].Embedding)
 
-	indices, values, err := knn.L2nns(query, database, len(database), knn.L2nnsOptions{RecallTarget: 0.90})
+	indices, values, err := knn.MIPS(query, database, 2, knn.MipsOptions{BinSize: 1})
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
 
-	fmt.Println("Nearerst neighbor:", sentences[indices[0]])
-	fmt.Println("Indices:", indices[0:3])
-	fmt.Println("Values:", values[0:3])
+	fmt.Println("Query Sentence:", query_sentence)
+	fmt.Println("Nearerst neighbor[0]:", sentences[indices[0]])
+	fmt.Println("Nearerst neighbor[1]:", sentences[indices[1]])
+	fmt.Println("Indices:", indices)
+	fmt.Println("Values:", values)
 }
 ```
 Output:
 ```
-L2nns: qy=1536, db=7:1536, k=7, rt=0.900000
-Nearerst neighbor: The scientist enjoys conducting experiments in the laboratory.
-Indices: [5 0 3]
-Values: [-0.3774270905672783 -0.3281931648621844 -0.3206193134616744]
+MIPS: qy=1536, db=7:1536, k=2, bs=1
+Query Sentence: I am a scientist who enjoys fishing when I'm not in the lab.
+Nearerst neighbor[0]: The scientist enjoys conducting experiments in the laboratory.
+Nearerst neighbor[1]: The sailor enjoys sailing on a boat in the sea.
+Indices: [5 0]
+Values: [0.877343524625263 0.8281978852988777]
 ```
 
 ## Sources:
