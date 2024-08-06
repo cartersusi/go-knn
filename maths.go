@@ -44,26 +44,11 @@ func HalfNorm(db [][]float64) []float64 {
 	return result
 }
 
-func Euclidean(a, b []float64) (float64, error) {
-	err := check_slices(a, b)
-	if err != nil {
-		return 0, err
-	}
-
+func Manhattan(a, b []float64) float64 {
 	var result float64
 	for i := 0; i < len(a); i++ {
 		result += math.Abs(a[i] - b[i])
 	}
 
-	return result, nil
-}
-
-func check_slices(a, b []float64) error {
-	if a == nil || b == nil {
-		return errors.New("input slices must not be nil")
-	}
-	if len(a) != len(b) {
-		return errors.New("input slices must have the same length")
-	}
-	return nil
+	return result
 }

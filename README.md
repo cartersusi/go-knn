@@ -23,11 +23,11 @@ go get github.com/carter4299/go-knn
 
 #### MIPS
 ```go
-type MipsOptions struct {
-	BinSize int
+type BinSize struct {
+	Value int
 }
 
-func MIPS(qy []float64, db [][]float64, k int, opts ...MipsOptions) ([]int, []float64, error)
+func MIPSnns(qy []float64, db [][]float64, k int, opts ...BinSize) ([]int, []float64, error)
 ```
 
 ---
@@ -35,17 +35,17 @@ func MIPS(qy []float64, db [][]float64, k int, opts ...MipsOptions) ([]int, []fl
 #### L2
 
 ```go 
-type L2nnsOptions struct {
-	RecallTarget float64
+type RecallTarget struct {
+	Value float64
 }
-func L2(qy []float64, db [][]float64, k int, opts ...L2nnsOptions) ([]int, []float64, error)
+func L2nns(qy []float64, db [][]float64, k int, opts ...RecallTarget) ([]int, []float64, error)
 ```
 
 ---
 
 #### L1
 ```go 
-func L1(qy []float64, db [][]float64, k int) ([]int, []float64, error)
+func L1nns(qy []float64, db [][]float64, k int) ([]int, []float64, error)
 ```
 
 ## Usage
@@ -54,7 +54,7 @@ package main
 
 import (
 	"fmt"
-	goknn "github.com/carter4299/go-knn"
+	knn "github.com/carter4299/go-knn"
 )
 func main() {
 	database := [][]float64{
@@ -64,12 +64,12 @@ func main() {
 	}
 	query := []float64{0.2, 0.3, 0.4, 0.5, 0.6, 0.7}
 
-	knn := &goknn.New{
+	s := &knn.New{
 		Data: database,
 		K:    2,
 	}
 
-	indices, values, err := knn.Search(query, "L2")
+	indices, values, err := s.Search(query, knn.L2)
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -90,7 +90,7 @@ import (
 	"fmt"
 	"log"
 
-	goknn "github.com/carter4299/go-knn"
+	knn "github.com/carter4299/go-knn"
 	openai "github.com/sashabaranov/go-openai"
 )
 
@@ -114,6 +114,16 @@ func main() {
 		"The doctor enjoys helping patients in the hospital.",
 		"The scientist enjoys conducting experiments in the laboratory.",
 		"The teacher enjoys teaching students in the classroom.",
+		"The artist enjoys painting in the studio.",
+		"The musician enjoys playing music on the stage.",
+		"The fisherman enjoys fishing in the river.",
+		"The gardener enjoys planting flowers in the garden.",
+		"The writer enjoys writing books in the library.",
+		"The programmer enjoys coding software in the office.",
+		"The engineer enjoys designing machines in the factory.",
+		"The mechanic enjoys fixing cars in the garage.",
+		"The electrician enjoys fixing wires in the house.",
+		"The plumber enjoys fixing pipes in the bathroom.",
 	}
 
 	query_sentence := "I am a scientist who enjoys fishing when I'm not in the lab."
@@ -147,12 +157,12 @@ func main() {
 
 	query = float32ToFloat64(queryResponse.Data[0].Embedding)
 
-	knn := &goknn.New{
+	s := &knn.New{
 		Data: database,
-		K:    2,
+		K:    3,
 	}
 
-	indices, values, err := knn.Search(query, "MIPS", goknn.MipsOptions{BinSize: 2})
+	indices, values, err := s.Search(query, "MIPS", knn.BinSize{Value: 2})
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -167,12 +177,12 @@ func main() {
 ```
 Output:
 ```
-MIPS: qy=1536, db=7:1536, k=2, bs=2
+MIPS: qy=1536, db=17:1536, k=3, bs=2
 Query Sentence: I am a scientist who enjoys fishing when I'm not in the lab.
 Nearerst neighbor[0]: The scientist enjoys conducting experiments in the laboratory.
-Nearerst neighbor[1]: The sailor enjoys sailing on a boat in the sea.
-Indices: [5 0]
-Values: [0.8774271924221423 0.828193179347956]
+Nearerst neighbor[1]: The fisherman enjoys fishing in the river.
+Indices: [5 9 0]
+Values: [0.8774271924221423 0.8690259037780471 0.828193179347956]
 ```
 
 ## Sources:

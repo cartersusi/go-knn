@@ -5,26 +5,32 @@ import (
 	"fmt"
 )
 
-func MIPS(qy []float64, db [][]float64, k int, opts ...MipsOptions) ([]int, []float64, error) {
-	if qy == nil || db == nil {
-		return nil, nil, errors.New("input slices must not be nil")
-	}
-	if len(qy) == 0 || len(db) == 0 {
-		return nil, nil, errors.New("input slices must not be empty")
-	}
-	if k <= 0 {
-		return nil, nil, errors.New("k must be a positive integer")
+func MIPSnns(qy []float64, db [][]float64, k int, opts ...BinSize) ([]int, []float64, error) {
+	err := Validate(qy, db, k)
+	if err != nil {
+		return nil, nil, err
 	}
 
-	bin_size := 2
+	bin_size := estimateBinSize(len(db))
 	if len(opts) > 0 {
-		bin_size = opts[0].BinSize
+		bin_size = opts[0].Value
 	}
+
 	if bin_size <= 0 || bin_size > 64 {
-		return nil, nil, errors.New("bin_size must be a positive integer")
+		return nil, nil, errors.New("bin_size must be a positive integer less than or equal to 64")
 	}
 	if bin_size > len(qy) && bin_size > len(db[0]) {
-		return nil, nil, errors.New("bin_size must be less than the length of the query and db vectors")
+		return nil, nil, errors.New("bin_size must be less than the length of the input slices")
+	}
+
+	// Warnings: just an observation, magic number ig
+	if (len(db)/bin_size) < 8 && bin_size > 1 {
+		fmt.Println("Warning: bin_size is relatively large for the input data. Information Loss and Unexpected Results may occur.")
+	}
+
+	bin_sizes := map[int]bool{1: true, 2: true, 4: true, 8: true, 16: true, 32: true, 64: true}
+	if !bin_sizes[bin_size] {
+		fmt.Println("Warning: bin_size is not a power of 2. Unexpected Results may occur.")
 	}
 
 	fmt.Printf("MIPS: qy=%d, db=%d:%d, k=%d, bs=%d\n", len(qy), len(db), len(db[0]), k, bin_size)
@@ -34,18 +40,23 @@ func MIPS(qy []float64, db [][]float64, k int, opts ...MipsOptions) ([]int, []fl
 		return nil, nil, err
 	}
 
-	A, V := approxMaxK(scores, k, bin_size)
-	return A, V, nil
+	return approxMaxK(scores, k, bin_size)
 }
 
 // https://arxiv.org/pdf/2206.14286
-func approxMaxK(scores []float64, k int, binSize int) ([]int, []float64) {
+func approxMaxK(scores []float64, k int, binSize int) ([]int, []float64, error) {
+	if scores == nil {
+		return nil, nil, errors.New("unknown error while calculating scores")
+	}
+	if k > len(scores) {
+		return nil, nil, errors.New("k must be less than the length of the scores vector")
+	}
+
 	N := len(scores)
 	L := N / binSize
 
-	if k > L {
-		fmt.Printf("k is greater than L, setting k to L: k=%d, L=%d ...\n", k, L)
-		k = L
+	if N%binSize != 0 {
+		L++
 	}
 
 	V := make([]float64, L)
@@ -94,5 +105,26 @@ func approxMaxK(scores []float64, k int, binSize int) ([]int, []float64) {
 		V[maxIndex>>uint(binSize)] = float64(-1)
 	}
 
-	return topKIndices, topKValues
+	return topKIndices, topKValues, nil
+}
+
+func estimateBinSize(dbLen int) int {
+	binSizes := []struct {
+		threshold uint64
+		value     uint64
+	}{
+		{1 << 8, 1},
+		{1 << 12, 2},
+		{1 << 16, 4},
+		{1 << 20, 8},
+		{1 << 24, 16},
+		{1 << 28, 32},
+	}
+
+	for _, binSize := range binSizes {
+		if uint64(dbLen) < binSize.threshold {
+			return int(binSize.value)
+		}
+	}
+	return 64
 }
