@@ -162,7 +162,7 @@ func main() {
 		K:    3,
 	}
 
-	indices, values, err := s.Search(query, "MIPS", knn.BinSize{Value: 2})
+	indices, values, err := s.Search(query, knn.MIPS, knn.BinSize{Value: 2})
 	if err != nil {
 		fmt.Println(err)
 		return
