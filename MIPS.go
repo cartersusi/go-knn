@@ -25,15 +25,15 @@ func MIPSnns(qy []float64, db [][]float64, k int, opts ...BinSize) ([]int, []flo
 
 	// Warnings: just an observation, magic number ig
 	if (len(db)/bin_size) < 8 && bin_size > 1 {
-		fmt.Println("Warning: bin_size is relatively large for the input data. Information Loss and Unexpected Results may occur.")
+		Log("bin_size is too large for the size of the database. This may lead to unexpected results.", Warning)
 	}
 
 	bin_sizes := map[int]bool{1: true, 2: true, 4: true, 8: true, 16: true, 32: true, 64: true}
 	if !bin_sizes[bin_size] {
-		fmt.Println("Warning: bin_size is not a power of 2. Unexpected Results may occur.")
+		Log("bin_size is not a power of 2. This may lead to unexpected results.", Warning)
 	}
 
-	fmt.Printf("MIPS: qy=%d, db=%d:%d, k=%d, bs=%d\n", len(qy), len(db), len(db[0]), k, bin_size)
+	Log(fmt.Sprintf("MIPS: qy=%d, db=%d:%d, k=%d, bs=%d\n", len(qy), len(db), len(db[0]), k, bin_size), Info)
 
 	scores, err := Einsum(qy, db)
 	if err != nil {

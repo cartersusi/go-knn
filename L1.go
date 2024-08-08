@@ -11,7 +11,7 @@ func L1nns(qy []float64, db [][]float64, k int) ([]int, []float64, error) {
 		return nil, nil, err
 	}
 
-	fmt.Printf("L1: qy=%d, db=%d:%d, k=%d\n", len(qy), len(db), len(db[0]), k)
+	Log(fmt.Sprintf("L1: qy=%d, db=%d:%d, k=%d\n", len(qy), len(db), len(db[0]), k), Info)
 
 	h := &MaxHeap{}
 	heap.Init(h)

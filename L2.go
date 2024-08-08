@@ -20,7 +20,7 @@ func L2nns(qy []float64, db [][]float64, k int, opts ...RecallTarget) ([]int, []
 		return nil, nil, fmt.Errorf("recall_target must be between 0 and 1")
 	}
 
-	fmt.Printf("L2: qy=%d, db=%d:%d, k=%d, rt=%f\n", len(qy), len(db), len(db[0]), k, recall_target)
+	Log(fmt.Sprintf("L2: qy=%d, db=%d:%d, k=%d, rt=%f\n", len(qy), len(db), len(db[0]), k, recall_target), Info)
 
 	dots, err := Einsum(qy, db)
 	if err != nil {
