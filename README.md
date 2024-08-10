@@ -26,6 +26,8 @@ import "github.com/carter4299/go-knn"
 ```
 
 ### Creating Tensors
+If Tensors of different float precision are used, float64 takes priority
+
 Supported Scalars:
 * float32
 * float64
