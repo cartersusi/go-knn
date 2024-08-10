@@ -5,26 +5,16 @@ import (
 	"fmt"
 )
 
-func MIPSnns(qy []float64, db [][]float64, k int, opts ...BinSize) ([]int, []float64, error) {
-	err := Validate(qy, db, k)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	bin_size := estimateBinSize(len(db))
-	if len(opts) > 0 {
-		bin_size = opts[0].Value
-	}
-
+func MIPSnns(qy Tensor, db Tensor, k int, bin_size int) ([]int, []float64, error) {
 	if bin_size <= 0 || bin_size > 64 {
 		return nil, nil, errors.New("bin_size must be a positive integer less than or equal to 64")
 	}
-	if bin_size > len(qy) && bin_size > len(db[0]) {
+	if bin_size > qy.Shape[0] && bin_size > db.Shape[1] {
 		return nil, nil, errors.New("bin_size must be less than the length of the input slices")
 	}
 
 	// Warnings: just an observation, magic number ig
-	if (len(db)/bin_size) < 8 && bin_size > 1 {
+	if (db.Shape[0]/bin_size) < 8 && bin_size > 1 {
 		Log("bin_size is too large for the size of the database. This may lead to unexpected results.", Warning)
 	}
 
@@ -33,14 +23,24 @@ func MIPSnns(qy []float64, db [][]float64, k int, opts ...BinSize) ([]int, []flo
 		Log("bin_size is not a power of 2. This may lead to unexpected results.", Warning)
 	}
 
-	Log(fmt.Sprintf("MIPS: qy=%d, db=%d:%d, k=%d, bs=%d\n", len(qy), len(db), len(db[0]), k, bin_size), Info)
+	Log(fmt.Sprintf("MIPS: qy=%v, db=%v, k=%d, bs=%d", qy.Shape, db.Shape, k, bin_size), Info)
 
-	scores, err := Einsum(qy, db)
-	if err != nil {
-		return nil, nil, err
+	switch qy.Type {
+	case Double:
+		qyv := qy.Values.([]float64)
+		dbv := db.Values.([][]float64)
+		scores := Einsumf64(qyv, dbv)
+		return approxMaxK(scores, k, bin_size)
+	case Float:
+		qyv := qy.Values.([]float32)
+		dbv := db.Values.([][]float32)
+		scores := Einsumf32(qyv, dbv)
+		return approxMaxK(F32To64(scores), k, bin_size)
+	default:
+		return nil, nil, fmt.Errorf("unsupported type %v", db.Type)
 	}
 
-	return approxMaxK(scores, k, bin_size)
+	return nil, nil, errors.New("unknown error")
 }
 
 // https://arxiv.org/pdf/2206.14286
@@ -108,7 +108,7 @@ func approxMaxK(scores []float64, k int, binSize int) ([]int, []float64, error) 
 	return topKIndices, topKValues, nil
 }
 
-func estimateBinSize(dbLen int) int {
+func EstimateBinSize(dbLen int) int {
 	binSizes := []struct {
 		threshold uint64
 		value     uint64

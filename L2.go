@@ -6,35 +6,55 @@ import (
 	"fmt"
 )
 
-func L2nns(qy []float64, db [][]float64, k int, opts ...RecallTarget) ([]int, []float64, error) {
-	err := Validate(qy, db, k)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	recall_target := 0.95
-	if len(opts) > 0 {
-		recall_target = opts[0].Value
-	}
+func L2nns(qy Tensor, db Tensor, k int, recall_target float64) ([]int, []float64, error) {
 	if !(0 < recall_target && recall_target <= 1) {
 		return nil, nil, fmt.Errorf("recall_target must be between 0 and 1")
 	}
 
-	Log(fmt.Sprintf("L2: qy=%d, db=%d:%d, k=%d, rt=%f\n", len(qy), len(db), len(db[0]), k, recall_target), Info)
+	Log(fmt.Sprintf("L2: qy=%v, db=%v, k=%d, rt=%f", qy.Shape, db.Shape, k, recall_target), Info)
 
-	dots, err := Einsum(qy, db)
-	if err != nil {
-		return nil, nil, err
+	switch qy.Type {
+	case Double:
+		qyv := qy.Values.([]float64)
+		dbv := db.Values.([][]float64)
+		dists := calcDistf64(qyv, dbv)
+
+		return approxMinK(dists, k, recall_target)
+	case Float:
+		qyv := qy.Values.([]float32)
+		dbv := db.Values.([][]float32)
+		dists := calcDistf32(qyv, dbv)
+
+		return approxMinK(dists, k, recall_target)
+	default:
+		return nil, nil, fmt.Errorf("unsupported type %v", db.Type)
 	}
 
-	db_halfnorm := HalfNorm(db)
+	return nil, nil, errors.New("unknown error")
+}
+
+func calcDistf64(qy []float64, db [][]float64) []float64 {
+	dots := Einsumf64(qy, db)
+	db_halfnorm := HalfNormf64(db)
 
 	dists := make([]float64, len(dots))
 	for i := range dots {
 		dists[i] = db_halfnorm[i] - dots[i]
 	}
 
-	return approxMinK(dists, k, recall_target)
+	return dists
+}
+
+func calcDistf32(qy []float32, db [][]float32) []float64 {
+	dots := Einsumf32(qy, db)
+	db_halfnorm := HalfNormf32(db)
+
+	dists := make([]float64, len(dots))
+	for i := range dots {
+		dists[i] = float64(db_halfnorm[i]) - float64(dots[i])
+	}
+
+	return dists
 }
 
 func approxMinK(dists []float64, k int, recallTarget float64) ([]int, []float64, error) {

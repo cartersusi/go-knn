@@ -19,69 +19,60 @@ For a more advanced implementation, see libraries:
 go get github.com/carter4299/go-knn
 ```
 
-## Functions
-
-#### MIPS
-```go
-type BinSize struct {
-	Value int
-}
-
-func MIPSnns(qy []float64, db [][]float64, k int, opts ...BinSize) ([]int, []float64, error)
-```
-
----
-
-#### L2
-
-```go 
-type RecallTarget struct {
-	Value float64
-}
-func L2nns(qy []float64, db [][]float64, k int, opts ...RecallTarget) ([]int, []float64, error)
-```
-
----
-
-#### L1
-```go 
-func L1nns(qy []float64, db [][]float64, k int) ([]int, []float64, error)
-```
-
 ## Usage
-```go
-package main
-
-import (
-	"fmt"
-	knn "github.com/carter4299/go-knn"
-)
-func main() {
-	database := [][]float64{
-		{0.1, 0.2, 0.3, 0.4, 0.5, 0.6},
-		{0.4, 0.5, 0.6, 0.7, 0.8, 0.9},
-		{0.7, 0.8, 0.9, 0.1, 0.2, 0.3},
-	}
-	query := []float64{0.2, 0.3, 0.4, 0.5, 0.6, 0.7}
-
-	s := &knn.New{
-		Data: database,
-		K:    2,
-	}
-
-	indices, values, err := s.Search(query, knn.L2)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-
-	fmt.Println("Nearerst neighbor:", database[indices[0]])
-	fmt.Println("Indices:", indices)
-	fmt.Println("Values:", values)
-}
+### Importing
+```go 
+import "github.com/carter4299/go-knn"
 ```
 
-## Example using OpenAI Ada
+### Creating Tensors
+Supported Scalars:
+* float32
+* float64
+
+Supported Dimensions/Ranks:
+* 1
+* 2
+
+**Matrix**:
+```go
+matrix := [][]float64{
+	{0.1, 0.2, 0.3, 0.4},
+	{0.4, 0.5, 0.6, 0.7},
+}
+data, _ := knn.NewTensor(matrix)
+fmt.Println(data.Rank)  // 2
+fmt.Println(data.Shape) // [2 4]
+fmt.Println(data.Type)  // float64
+```
+
+**Vectors**:
+```go
+vector := []float32{0.2, 0.3, 0.4, 0.5}
+query, _ := k.NewTensor(vector)
+fmt.Println(query.Rank)  // 1
+fmt.Println(query.Shape) // [4]
+fmt.Println(query.Type)  // float32
+```
+
+### Searching
+**New Instance**
+```go
+s := &knn.New{
+	Data: data,	// 2d Tensor 
+	K:    2,  // Number of nearest neighbors
+}
+```
+**Search Options**
+```go
+// query is a 1D Tensor
+indices, values, err := s.Search(query, knn.L1) // L1 Search
+indices, values, err := s.Search(query, knn.L2, 0.95) // L2 Search has an option of passing in a recall_target float64
+indices, values, err := s.Search(query, knn.MIPS, 2) // MIPS has an option of passing in a bin_size int
+```
+
+
+## Example using OpenAI Ada (MIPS)
 ```go
 package main
 
@@ -90,17 +81,9 @@ import (
 	"fmt"
 	"log"
 
-	knn "github.com/carter4299/go-knn"
+	"github.com/carter4299/go-knn"
 	openai "github.com/sashabaranov/go-openai"
 )
-
-func float32ToFloat64(in []float32) []float64 {
-	out := make([]float64, len(in))
-	for i, v := range in {
-		out[i] = float64(v)
-	}
-	return out
-}
 
 func main() {
 	openai_token := "my-key"
@@ -115,21 +98,12 @@ func main() {
 		"The scientist enjoys conducting experiments in the laboratory.",
 		"The teacher enjoys teaching students in the classroom.",
 		"The artist enjoys painting in the studio.",
-		"The musician enjoys playing music on the stage.",
-		"The fisherman enjoys fishing in the river.",
-		"The gardener enjoys planting flowers in the garden.",
-		"The writer enjoys writing books in the library.",
-		"The programmer enjoys coding software in the office.",
-		"The engineer enjoys designing machines in the factory.",
-		"The mechanic enjoys fixing cars in the garage.",
-		"The electrician enjoys fixing wires in the house.",
-		"The plumber enjoys fixing pipes in the bathroom.",
 	}
 
 	query_sentence := "I am a scientist who enjoys fishing when I'm not in the lab."
 
-	var query []float64
-	var database [][]float64
+	var vector []float32
+	var matrix [][]float32
 
 	for _, sentence := range sentences {
 		queryReq := openai.EmbeddingRequest{
@@ -142,7 +116,7 @@ func main() {
 			log.Fatal("Error creating query embedding:", err)
 		}
 
-		database = append(database, float32ToFloat64(queryResponse.Data[0].Embedding))
+		matrix = append(matrix, queryResponse.Data[0].Embedding)
 	}
 
 	queryReq := openai.EmbeddingRequest{
@@ -155,14 +129,17 @@ func main() {
 		log.Fatal("Error creating target embedding:", err)
 	}
 
-	query = float32ToFloat64(queryResponse.Data[0].Embedding)
+	vector = queryResponse.Data[0].Embedding
+
+	data, _ := knn.NewTensor(matrix)
+	query, _ := knn.NewTensor(vector)
 
 	s := &knn.New{
-		Data: database,
-		K:    3,
+		Data: data,
+		K:    2,
 	}
 
-	indices, values, err := s.Search(query, knn.MIPS, knn.BinSize{Value: 2})
+	indices, values, err := s.Search(query, knn.MIPS, 1)
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -177,12 +154,12 @@ func main() {
 ```
 Output:
 ```
-MIPS: qy=1536, db=17:1536, k=3, bs=2
+2024/08/10 17:17:13 [INFO] MIPS: qy=[1536], db=[8 1536], k=2, bs=1
 Query Sentence: I am a scientist who enjoys fishing when I'm not in the lab.
 Nearerst neighbor[0]: The scientist enjoys conducting experiments in the laboratory.
-Nearerst neighbor[1]: The fisherman enjoys fishing in the river.
-Indices: [5 9 0]
-Values: [0.8774271924221423 0.8690259037780471 0.828193179347956]
+Nearerst neighbor[1]: The sailor enjoys sailing on a boat in the sea.
+Indices: [5 0]
+Values: [0.877427339553833 0.828193724155426]
 ```
 
 ## Sources:

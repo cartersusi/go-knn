@@ -5,26 +5,36 @@ import (
 	"fmt"
 )
 
-func L1nns(qy []float64, db [][]float64, k int) ([]int, []float64, error) {
-	err := Validate(qy, db, k)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	Log(fmt.Sprintf("L1: qy=%d, db=%d:%d, k=%d\n", len(qy), len(db), len(db[0]), k), Info)
+func L1nns(qy Tensor, db Tensor, k int) ([]int, []float64, error) {
+	Log(fmt.Sprintf("L1: qy=%v, db=%v, k=%d", qy.Shape, db.Shape, k), Info)
 
 	h := &MaxHeap{}
 	heap.Init(h)
 
-	for i, dp := range db {
-		distance := Manhattan(dp, qy)
-
+	process := func(i int, distance float64) {
 		if h.Len() < k {
 			heap.Push(h, Result{Index: i, Distance: distance})
 		} else if distance < h.Peek().(Result).Distance {
 			heap.Pop(h)
 			heap.Push(h, Result{Index: i, Distance: distance})
 		}
+	}
+
+	switch qy.Type {
+	case Double:
+		qyv := qy.Values.([]float64)
+		for i, dp := range db.Values.([][]float64) {
+			distance := Manhattanf64(qyv, dp)
+			process(i, distance)
+		}
+	case Float:
+		qyv := qy.Values.([]float32)
+		for i, dp := range db.Values.([][]float32) {
+			distance := Manhattanf32(qyv, dp)
+			process(i, float64(distance))
+		}
+	default:
+		return nil, nil, fmt.Errorf("unsupported type %v", db.Type)
 	}
 
 	indices := make([]int, k)

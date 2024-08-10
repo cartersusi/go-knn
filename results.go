@@ -1,7 +1,5 @@
 package knn
 
-type MinHeap []Result
-
 type Result struct {
 	Index    int
 	Distance float64
