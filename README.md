@@ -8,9 +8,9 @@ This library is a simple KNN Search for embeddings.
 
 ---
 
-This library is intended to be lightweight and quick KNN search for reasonably sized datasets. e.g small business e-comm, blogs, etc...
+This library is intended to be a CPU KNN search for reasonably sized datasets.
 
-For a more advanced implementation, see libraries:
+For a more advanced GPU implementation, see libraries:
 * FAISS - https://github.com/facebookresearch/faiss
 * Annoy - https://github.com/spotify/annoy
 
