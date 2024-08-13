@@ -1,7 +1,7 @@
 # Go KNN
 [![Go Reference](https://pkg.go.dev/badge/github.com/carter4299/go-knn.svg)](https://pkg.go.dev/github.com/carter4299/go-knn)
 
-This library is a simple KNN Search for embeddings.
+This library is a simple k-NN for embeddings.
 * L1Distance(Manhattan)
 * L2Distance(Euclidean)
 * MIPS (Maximum Inner Product Search)
