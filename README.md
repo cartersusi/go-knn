@@ -1,16 +1,13 @@
 # Go KNN
 [![Go Reference](https://pkg.go.dev/badge/github.com/carter4299/go-knn.svg)](https://pkg.go.dev/github.com/carter4299/go-knn)
 
-This library is a simple k-NN for embeddings.
 * L1Distance(Manhattan)
 * L2Distance(Euclidean)
 * MIPS (Maximum Inner Product Search)
 
 ---
 
-This library is intended to be a CPU KNN search for reasonably sized datasets.
-
-For a more advanced GPU implementation, see libraries:
+For more advanced GPU implementations, see:
 * FAISS - https://github.com/facebookresearch/faiss
 * Annoy - https://github.com/spotify/annoy
 
