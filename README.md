@@ -1,10 +1,6 @@
 # Go KNN
 [![Go Reference](https://pkg.go.dev/badge/github.com/carter4299/go-knn.svg)](https://pkg.go.dev/github.com/carter4299/go-knn)
 
-* L1Distance(Manhattan)
-* L2Distance(Euclidean)
-* MIPS (Maximum Inner Product Search)
-
 ---
 
 For more advanced GPU implementations, see:
@@ -63,14 +59,15 @@ s := &knn.New{
 }
 ```
 **Search Options**
-* 'values' will always be T []float64; even if a f32 or f64 is used in a Tensor.
+* L1Distance(Manhattan)
+* L2Distance(Euclidean)
+* MIPS (Maximum Inner Product Search)
 ```go
 // query is a 1D Tensor
 indices, values, err := s.Search(query, knn.L1) // L1 Search
 indices, values, err := s.Search(query, knn.L2, 0.95) // L2 Search has an option of passing in a recall_target float64
 indices, values, err := s.Search(query, knn.MIPS, 2) // MIPS has an option of passing in a bin_size int
 ```
-
 
 ## Example using OpenAI Ada (MIPS)
 ```go
