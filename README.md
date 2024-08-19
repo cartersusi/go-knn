@@ -66,6 +66,7 @@ s := &knn.New{
 }
 ```
 **Search Options**
+* 'values' will always be T []float64; even if a f32 or f64 is used in a Tensor.
 ```go
 // query is a 1D Tensor
 indices, values, err := s.Search(query, knn.L1) // L1 Search
