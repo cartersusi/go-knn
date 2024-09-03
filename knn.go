@@ -4,11 +4,16 @@ import (
 	"container/heap"
 	"errors"
 	"fmt"
+	"runtime"
+	"sync"
+	"unsafe"
 )
 
 type Search[T float32 | float64] struct {
-	Data  *Tensor[T]
-	Query *Tensor[T]
+	Data        *Tensor[T]
+	Query       *Tensor[T]
+	Multithread bool
+	MaxWorkers  int
 }
 
 type Neighbors[T any] struct {
@@ -22,22 +27,6 @@ const (
 	MIPS
 )
 
-func (s *Search[T]) checker() error {
-	if s.Data == nil || s.Query == nil {
-		return errors.New("data and query tensors must be initialized")
-	}
-
-	if s.Data.Rank != 2 || s.Query.Rank != 1 {
-		return errors.New("data must be a matrix and query must be a vector")
-	}
-
-	if s.Data.Shape[1] != s.Query.Shape[0] {
-		return errors.New("data and query dimensions do not match")
-	}
-
-	return nil
-}
-
 func (s *Search[T]) L1(k int) (Neighbors[T], error) {
 	if err := s.checker(); err != nil {
 		return Neighbors[T]{}, err
@@ -46,7 +35,40 @@ func (s *Search[T]) L1(k int) (Neighbors[T], error) {
 	h := &MaxHeap[T]{}
 	heap.Init(h)
 
-	Log(fmt.Sprintf("L1: qy=%v, db=%v, k=%d", s.Query.Shape, s.Data.Shape, k), Info)
+	if s.Multithread {
+		if s.MaxWorkers == 0 {
+			s.MaxWorkers = runtime.NumCPU()
+		}
+		n_tasks := len(s.Data.Values.Matrix)
+		results := make([]T, n_tasks)
+
+		var wg sync.WaitGroup
+		sem := make(chan struct{}, s.MaxWorkers)
+
+		worker := func(s *Search[T], i int, wg *sync.WaitGroup) {
+			defer wg.Done()
+			results[i] = s.Manhattan(&i)
+			<-sem
+		}
+
+		for i := 0; i < n_tasks; i++ {
+			sem <- struct{}{}
+			wg.Add(1)
+			go worker(s, i, &wg)
+		}
+
+		go func() {
+			wg.Wait()
+			close(sem)
+		}()
+
+		for i, distance := range results {
+			h.Process(&i, &k, &distance)
+			i++
+		}
+
+		return s.ret(&k, h)
+	}
 
 	for i := 0; i < len(s.Data.Values.Matrix); i++ {
 		distance := s.Manhattan(&i)
@@ -64,8 +86,6 @@ func (s *Search[T]) L2(k int) (Neighbors[T], error) {
 	h := &MaxHeap[T]{}
 	heap.Init(h)
 
-	Log(fmt.Sprintf("L2: qy=%v, db=%v, k=%d", s.Query.Shape, s.Data.Shape, k), Info)
-
 	dots := s.Einsum()
 	halfnorm := s.HalfNorm()
 
@@ -80,6 +100,10 @@ func (s *Search[T]) L2(k int) (Neighbors[T], error) {
 func (s *Search[T]) MIPS(k int, opts ...interface{}) (Neighbors[T], error) {
 	if err := s.checker(); err != nil {
 		return Neighbors[T]{}, err
+	}
+
+	if s.Multithread {
+		Log("MIPS does not support multithreading for now", Warning)
 	}
 
 	bs := s.EstimateBinSize()
@@ -103,8 +127,6 @@ func (s *Search[T]) MIPS(k int, opts ...interface{}) (Neighbors[T], error) {
 	if !bin_sizes[bs] {
 		Log("bin_size is not a power of 2. This may lead to unexpected results.", Warning)
 	}
-
-	Log(fmt.Sprintf("MIPS: qy=%v, db=%v, k=%d", s.Query.Shape, s.Data.Shape, k), Info)
 
 	scores := s.Einsum()
 	if scores == nil {
@@ -172,6 +194,22 @@ func (s *Search[T]) MIPS(k int, opts ...interface{}) (Neighbors[T], error) {
 	return Neighbors[T]{Values: values, Indices: indices}, nil
 }
 
+func (s *Search[T]) checker() error {
+	if s.Data == nil || s.Query == nil {
+		return errors.New("data and query tensors must be initialized")
+	}
+
+	if s.Data.Rank != 2 || s.Query.Rank != 1 {
+		return errors.New("data must be a matrix and query must be a vector")
+	}
+
+	if s.Data.Shape[1] != s.Query.Shape[0] {
+		return errors.New("data and query dimensions do not match")
+	}
+
+	return nil
+}
+
 func (s *Search[T]) ret(k *int, h *MaxHeap[T]) (Neighbors[T], error) {
 	indices := make([]int, *k)
 	values := make([]T, *k)
@@ -184,9 +222,52 @@ func (s *Search[T]) ret(k *int, h *MaxHeap[T]) (Neighbors[T], error) {
 	return Neighbors[T]{Values: values, Indices: indices}, nil
 }
 
-func (s *Search[T]) ListOptions() {
+func (s *Search[T]) PrintDistances() {
 	fmt.Println("Available options for Search:")
 	fmt.Println("\t1. L1(k int)")
 	fmt.Println("\t2. L2(k int)")
 	fmt.Println("\t3. MIPS(k int, ?bin_size int)")
+}
+
+func (s *Search[T]) GetSize() T {
+	size := T(0)
+	if s.Data == nil || s.Query == nil {
+		return size
+	}
+	size += T(unsafe.Sizeof(s))
+	size += T(unsafe.Sizeof(s.Data.Values.Matrix))
+	for _, row := range s.Data.Values.Matrix {
+		size += T(unsafe.Sizeof(row))
+		size += T(len(row)) * T(unsafe.Sizeof(T(0)))
+	}
+	size += T(unsafe.Sizeof(s.Data.Shape) * 2)
+	size += T(unsafe.Sizeof(s.Data.Type))
+	size += T(unsafe.Sizeof(s.Data.Rank))
+
+	size += T(unsafe.Sizeof(s.Query.Values.Vector))
+	size += T(len(s.Query.Values.Vector)) * T(unsafe.Sizeof(T(0)))
+	size += T(unsafe.Sizeof(s.Query.Shape))
+	size += T(unsafe.Sizeof(s.Query.Type))
+	size += T(unsafe.Sizeof(s.Query.Rank))
+
+	size += T(unsafe.Sizeof(s.Multithread))
+	size += T(unsafe.Sizeof(s.MaxWorkers))
+
+	return size / (1024 * 1024)
+}
+
+func (s *Search[T]) PrintTypes() {
+	fmt.Println(`Search[T float32 | float64] {
+  Data: *Tensor[T],
+  Query: *Tensor[T],
+  Multithread: bool,
+  MaxWorkers: int,
+}`)
+}
+
+func (s *Search[T]) Print() {
+	fmt.Printf("Data Tensor:\n  Shape: %v\n  Values: %v\n  Rank: %d\n  Type: %v\n", s.Data.Shape, s.Data.Values.Matrix, s.Data.Rank, s.Data.Type)
+	fmt.Printf("Query Tensor:\n  Shape: %v\n  Values: %v\n  Rank: %d\n  Type: %v\n", s.Query.Shape, s.Query.Values.Vector, s.Query.Rank, s.Query.Type)
+	fmt.Printf("Multithread: %v\nMaxWorkers: %d\n", s.Multithread, s.MaxWorkers)
+	fmt.Printf("Total Size: %f MB\n\n", s.GetSize())
 }

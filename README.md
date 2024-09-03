@@ -29,12 +29,12 @@ Supported Dimensions/Ranks:
 
 **Matrix**:
 ```go
-matrix := [][]float64{
+matrix := [][]float32{
 	{0.1, 0.2, 0.3, 0.4},
 	{0.4, 0.5, 0.6, 0.7},
 }
-m := &knn.Tensor[float64]{}
-m.New(data)
+m := &knn.Tensor[float32]{}
+m.New(matrix)
 ```
 
 **Vectors**:
@@ -48,14 +48,11 @@ v.New(vector)
 **New Instance**
 ```go
 s := &knn.Search{
-	Data: data,	// 2d Tensor 
-	Query: query // 1D Tensor
+	Data: m,					// 2D Tensor 
+	Query: v,					// 1D Tensor
+	Multithread: true,			// Enable Multithreading (default = false)
+	MaxWorkers:  m.Shape[0],	// Specify MaxWorkers (default = n_cpu_cores)
 }
-```
-
-**Updating an Instance**
-```go
-s.Query = new_query
 ```
 
 **Search Options**
@@ -64,9 +61,19 @@ s.Query = new_query
 * MIPS (Maximum Inner Product Search)
 ```go
 // query is a 1D Tensor
-nearest_neighbors, err := s.Search(query, knn.L1) // L1 Search
-nearest_neighbors, err := s.Search(query, knn.L2) // L2 Search
-nearest_neighbors, err := s.Search(query, knn.MIPS, 2) // MIPS has an option of passing in a bin_size int
+nearest_neighbors, err := s.L1(2) 		// L1, k=2
+nearest_neighbors, err := s.L2(1) 		// L2, k=1
+nearest_neighbors, err := s.MIPS(4, 2) 	// MIPS, k=4, bin_size=2
+```
+
+**New Query**
+
+Seach.Query stores the address of a 1D Tensor, so it can be quickly changed for a new iteration.
+```go
+for query := range all_queries {
+	s.Query = query
+	nn, _ := s.L1(2)
+}
 ```
 
 ## Example using OpenAI Ada (MIPS)
@@ -138,7 +145,6 @@ func main() {
 		Data:  d,
 		Query: q,
 	}
-	s.ListOptions()
 
 	nn, err := s.MIPS(2, 1)
 	if err != nil {
@@ -154,7 +160,6 @@ func main() {
 ```
 Output:
 ```
-2024/08/10 17:17:13 [INFO] MIPS: qy=[1536], db=[8 1536], k=2, bs=1
 Query Sentence: I am a scientist who enjoys fishing when I'm not in the lab.
 Nearerst neighbor[0]: The scientist enjoys conducting experiments in the laboratory.
 Nearerst neighbor[1]: The sailor enjoys sailing on a boat in the sea.
