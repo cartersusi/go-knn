@@ -27,6 +27,8 @@ func (h *MaxHeap[T]) Pop() interface{} {
 func (h *MaxHeap[T]) Peek() interface{} {
 	return h.results[0]
 }
+
+// maybe move ??
 func (h *MaxHeap[T]) Process(i *int, k *int, distance *T) {
 	if h.Len() < *k {
 		heap.Push(h, Result[T]{Index: *i, Distance: *distance})

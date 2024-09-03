@@ -5,13 +5,8 @@ import (
 	"reflect"
 )
 
-type Data[T float32 | float64] struct {
-	Vector []T
-	Matrix [][]T
-}
-
 type Tensor[T float32 | float64] struct {
-	Values Data[T]
+	Values interface{}
 	Shape  []int
 	Type   reflect.Type
 	Rank   int
@@ -23,7 +18,6 @@ var validScalarTypes = map[reflect.Type]reflect.Type{
 }
 
 func (t *Tensor[T]) New(values interface{}) error {
-	var d Data[T]
 	v := reflect.ValueOf(values)
 
 	rank := 0
@@ -49,14 +43,11 @@ func (t *Tensor[T]) New(values interface{}) error {
 	}
 
 	if rank == 1 {
-		d.Vector = values.([]T)
-		d.Matrix = nil
+		t.Values = values.([]T)
 	} else {
-		d.Matrix = values.([][]T)
-		d.Vector = nil
+		t.Values = values.([][]T)
 	}
 
-	t.Values = d
 	t.Shape = shape
 	t.Rank = rank
 	t.Type = dtype

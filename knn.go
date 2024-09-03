@@ -39,7 +39,7 @@ func (s *Search[T]) L1(k int) (Neighbors[T], error) {
 		if s.MaxWorkers == 0 {
 			s.MaxWorkers = runtime.NumCPU()
 		}
-		n_tasks := len(s.Data.Values.Matrix)
+		n_tasks := len(s.Data.Values.([][]T))
 		results := make([]T, n_tasks)
 
 		var wg sync.WaitGroup
@@ -70,7 +70,7 @@ func (s *Search[T]) L1(k int) (Neighbors[T], error) {
 		return s.ret(&k, h)
 	}
 
-	for i := 0; i < len(s.Data.Values.Matrix); i++ {
+	for i := 0; i < len(s.Data.Values.([][]T)); i++ {
 		distance := s.Manhattan(&i)
 		h.Process(&i, &k, &distance)
 	}
@@ -235,8 +235,8 @@ func (s *Search[T]) GetSize() T {
 		return size
 	}
 	size += T(unsafe.Sizeof(s))
-	size += T(unsafe.Sizeof(s.Data.Values.Matrix))
-	for _, row := range s.Data.Values.Matrix {
+	size += T(unsafe.Sizeof(s.Data.Values.([][]T)))
+	for _, row := range s.Data.Values.([][]T) {
 		size += T(unsafe.Sizeof(row))
 		size += T(len(row)) * T(unsafe.Sizeof(T(0)))
 	}
@@ -244,8 +244,8 @@ func (s *Search[T]) GetSize() T {
 	size += T(unsafe.Sizeof(s.Data.Type))
 	size += T(unsafe.Sizeof(s.Data.Rank))
 
-	size += T(unsafe.Sizeof(s.Query.Values.Vector))
-	size += T(len(s.Query.Values.Vector)) * T(unsafe.Sizeof(T(0)))
+	size += T(unsafe.Sizeof(s.Query.Values.([]T)))
+	size += T(len(s.Query.Values.([]T))) * T(unsafe.Sizeof(T(0)))
 	size += T(unsafe.Sizeof(s.Query.Shape))
 	size += T(unsafe.Sizeof(s.Query.Type))
 	size += T(unsafe.Sizeof(s.Query.Rank))
@@ -266,8 +266,8 @@ func (s *Search[T]) PrintTypes() {
 }
 
 func (s *Search[T]) Print() {
-	fmt.Printf("Data Tensor:\n  Shape: %v\n  Values: %v\n  Rank: %d\n  Type: %v\n", s.Data.Shape, s.Data.Values.Matrix, s.Data.Rank, s.Data.Type)
-	fmt.Printf("Query Tensor:\n  Shape: %v\n  Values: %v\n  Rank: %d\n  Type: %v\n", s.Query.Shape, s.Query.Values.Vector, s.Query.Rank, s.Query.Type)
+	fmt.Printf("Data Tensor:\n  Shape: %v\n  Rank: %d\n  Type: %v\n", s.Data.Shape, s.Data.Rank, s.Data.Type)
+	fmt.Printf("Query Tensor:\n  Shape: %v\n  Rank: %d\n  Type: %v\n", s.Query.Shape, s.Query.Rank, s.Query.Type)
 	fmt.Printf("Multithread: %v\nMaxWorkers: %d\n", s.Multithread, s.MaxWorkers)
 	fmt.Printf("Total Size: %f MB\n\n", s.GetSize())
 }

@@ -7,8 +7,8 @@ import (
 
 func (s *Search[T]) Manhattan(i *int) T {
 	var sum T
-	for j := 0; j < len(s.Query.Values.Vector); j++ {
-		sum += Abs(s.Query.Values.Vector[j] - s.Data.Values.Matrix[*i][j])
+	for j := 0; j < len(s.Query.Values.([]T)); j++ {
+		sum += Abs(s.Query.Values.([]T)[j] - s.Data.Values.([][]T)[*i][j])
 	}
 	return sum
 }
@@ -31,7 +31,7 @@ func (s *Search[T]) Einsum() []T {
 			defer wg.Done()
 			dot := T(0)
 			for j := 0; j < qCols; j++ {
-				dot += s.Query.Values.Vector[j] * s.Data.Values.Matrix[i][j]
+				dot += s.Query.Values.([]T)[j] * s.Data.Values.([][]T)[i][j]
 			}
 
 			mu.Lock()
@@ -56,7 +56,7 @@ func (s *Search[T]) Einsum() []T {
 	for i := 0; i < dRows; i++ {
 		dot := T(0)
 		for j := 0; j < qCols; j++ {
-			dot += s.Query.Values.Vector[j] * s.Data.Values.Matrix[i][j]
+			dot += s.Query.Values.([]T)[j] * s.Data.Values.([][]T)[i][j]
 		}
 		result[i] = dot
 	}
@@ -82,7 +82,7 @@ func (s *Search[T]) HalfNorm() []T {
 			defer wg.Done()
 			halfnorm := T(0)
 			for j := 0; j < dCols; j++ {
-				halfnorm += s.Data.Values.Matrix[i][j] * s.Data.Values.Matrix[i][j]
+				halfnorm += s.Data.Values.([][]T)[i][j] * s.Data.Values.([][]T)[i][j]
 			}
 
 			mu.Lock()
@@ -107,7 +107,7 @@ func (s *Search[T]) HalfNorm() []T {
 	for i := 0; i < dRows; i++ {
 		halfnorm := T(0)
 		for j := 0; j < dCols; j++ {
-			halfnorm += s.Data.Values.Matrix[i][j] * s.Data.Values.Matrix[i][j]
+			halfnorm += s.Data.Values.([][]T)[i][j] * s.Data.Values.([][]T)[i][j]
 		}
 		result[i] = halfnorm * 0.5
 	}
