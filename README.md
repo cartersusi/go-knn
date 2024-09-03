@@ -60,7 +60,6 @@ s := &knn.Search{
 * L2Distance(Euclidean)
 * MIPS (Maximum Inner Product Search)
 ```go
-// query is a 1D Tensor
 nearest_neighbors, err := s.L1(2) 	// L1, k=2
 nearest_neighbors, err := s.L2(1) 	// L2, k=1
 nearest_neighbors, err := s.MIPS(4, 2) 	// MIPS, k=4, bin_size=2
