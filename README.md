@@ -19,8 +19,6 @@ import "github.com/carter4299/go-knn"
 ```
 
 ### Creating Tensors
-If Tensors of different float precision are used, float64 takes priority
-
 Supported Scalars:
 * float32
 * float64
@@ -35,38 +33,40 @@ matrix := [][]float64{
 	{0.1, 0.2, 0.3, 0.4},
 	{0.4, 0.5, 0.6, 0.7},
 }
-data, _ := knn.NewTensor(matrix)
-fmt.Println(data.Rank)  // 2
-fmt.Println(data.Shape) // [2 4]
-fmt.Println(data.Type)  // float64
+m := &knn.Tensor[float64]{}
+m.New(data)
 ```
 
 **Vectors**:
 ```go
 vector := []float32{0.2, 0.3, 0.4, 0.5}
-query, _ := k.NewTensor(vector)
-fmt.Println(query.Rank)  // 1
-fmt.Println(query.Shape) // [4]
-fmt.Println(query.Type)  // float32
+v := &knn.Tensor[float32]{}
+v.New(vector)
 ```
 
 ### Searching
 **New Instance**
 ```go
-s := &knn.New{
+s := &knn.Search{
 	Data: data,	// 2d Tensor 
-	K:    2,  // Number of nearest neighbors
+	Query: query // 1D Tensor
 }
 ```
+
+**Updating an Instance**
+```go
+s.Query = new_query
+```
+
 **Search Options**
 * L1Distance(Manhattan)
 * L2Distance(Euclidean)
 * MIPS (Maximum Inner Product Search)
 ```go
 // query is a 1D Tensor
-indices, values, err := s.Search(query, knn.L1) // L1 Search
-indices, values, err := s.Search(query, knn.L2, 0.95) // L2 Search has an option of passing in a recall_target float64
-indices, values, err := s.Search(query, knn.MIPS, 2) // MIPS has an option of passing in a bin_size int
+nearest_neighbors, err := s.Search(query, knn.L1) // L1 Search
+nearest_neighbors, err := s.Search(query, knn.L2) // L2 Search
+nearest_neighbors, err := s.Search(query, knn.MIPS, 2) // MIPS has an option of passing in a bin_size int
 ```
 
 ## Example using OpenAI Ada (MIPS)
@@ -128,25 +128,28 @@ func main() {
 
 	vector = queryResponse.Data[0].Embedding
 
-	data, _ := knn.NewTensor(matrix)
-	query, _ := knn.NewTensor(vector)
+	d := &knn.Tensor[float32]{}
+	d.New(matrix)
+	
+	q := &knn.Tensor[float32]{}
+	q.New(vector)
 
-	s := &knn.New{
-		Data: data,
-		K:    2,
+	s := &knn.Search[float32]{
+		Data:  d,
+		Query: q,
 	}
+	s.ListOptions()
 
-	indices, values, err := s.Search(query, knn.MIPS, 1)
+	nn, err := s.MIPS(2, 1)
 	if err != nil {
 		fmt.Println(err)
-		return
 	}
 
 	fmt.Println("Query Sentence:", query_sentence)
-	fmt.Println("Nearerst neighbor[0]:", sentences[indices[0]])
-	fmt.Println("Nearerst neighbor[1]:", sentences[indices[1]])
-	fmt.Println("Indices:", indices)
-	fmt.Println("Values:", values)
+	fmt.Println("Nearerst neighbor[0]:", sentences[nn.Indices[0]])
+	fmt.Println("Nearerst neighbor[1]:", sentences[nn.Indices[1]])
+	fmt.Println("Indices:", nn.Indices)
+	fmt.Println("Values:", nn.Values)
 }
 ```
 Output:
