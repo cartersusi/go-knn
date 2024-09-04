@@ -1,5 +1,5 @@
 # Go KNN
-[![Go Reference](https://pkg.go.dev/badge/github.com/carter4299/go-knn.svg)](https://pkg.go.dev/github.com/carter4299/go-knn)
+[![Go Reference](https://pkg.go.dev/badge/github.com/cartersusi/go-knn.svg)](https://pkg.go.dev/github.com/cartersusi/go-knn)
 
 ---
 
@@ -9,13 +9,13 @@ For more advanced GPU implementations, see:
 
 ## Installation
 ```sh
-go get github.com/carter4299/go-knn
+go get github.com/cartersusi/go-knn
 ```
 
 ## Usage
 ### Importing
 ```go 
-import "github.com/carter4299/go-knn"
+import "github.com/cartersusi/go-knn"
 ```
 
 ### Creating Tensors
@@ -84,7 +84,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/carter4299/go-knn"
+	"github.com/cartersusi/go-knn"
 	openai "github.com/sashabaranov/go-openai"
 )
 

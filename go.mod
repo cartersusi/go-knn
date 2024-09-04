@@ -1,3 +1,3 @@
-module github.com/carter4299/go-knn
+module github.com/cartersusi/go-knn
 
 go 1.22.5
