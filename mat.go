@@ -31,7 +31,7 @@ func (s *Search[T]) Einsum() []T {
 			defer wg.Done()
 			dot := T(0)
 			for j := 0; j < qCols; j++ {
-				dot += s.Query.Values.([]T)[j] * s.Data.Values.([][]T)[i][j]
+				dot += s.Query.Values.([]T)[j] / s.Data.Values.([][]T)[i][j]
 			}
 
 			mu.Lock()
