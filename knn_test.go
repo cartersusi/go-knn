@@ -93,7 +93,6 @@ func TestSearch(t *testing.T) {
 	})
 
 	t.Run("Error Cases", func(t *testing.T) {
-		// Test with invalid k
 		_, err := s.L1(0)
 		if err == nil {
 			t.Error("Expected error for k=0, got nil")
