@@ -7,7 +7,6 @@ import (
 )
 
 func TestSearch(t *testing.T) {
-	// Test data
 	data := [][]float32{
 		{1.0, 2.0, 3.0},
 		{4.0, 5.0, 6.0},
@@ -16,7 +15,6 @@ func TestSearch(t *testing.T) {
 	}
 	query := []float32{3.0, 4.0, 5.0}
 
-	// Create tensors
 	dataTensor := &Tensor[float32]{}
 	err := dataTensor.New(data)
 	if err != nil {
@@ -29,13 +27,11 @@ func TestSearch(t *testing.T) {
 		t.Fatalf("Failed to create query tensor: %v", err)
 	}
 
-	// Create search struct
 	s := &Search[float32]{
 		Data:  dataTensor,
 		Query: queryTensor,
 	}
 
-	// Test L1 (Manhattan) distance
 	t.Run("L1 Distance", func(t *testing.T) {
 		neighbors, err := s.L1(2)
 		if err != nil {
@@ -56,7 +52,6 @@ func TestSearch(t *testing.T) {
 		}
 	})
 
-	// Test L2 (Euclidean) distance
 	t.Run("L2 Distance", func(t *testing.T) {
 		neighbors, err := s.L2(2)
 		if err != nil {
@@ -77,7 +72,6 @@ func TestSearch(t *testing.T) {
 		}
 	})
 
-	// Test MIPS (Maximum Inner Product Search)
 	t.Run("MIPS", func(t *testing.T) {
 		neighbors, err := s.MIPS(2)
 		if err != nil {
@@ -98,7 +92,6 @@ func TestSearch(t *testing.T) {
 		}
 	})
 
-	// Test error cases
 	t.Run("Error Cases", func(t *testing.T) {
 		// Test with invalid k
 		_, err := s.L1(0)
@@ -111,8 +104,7 @@ func TestSearch(t *testing.T) {
 			t.Error("Expected error for k > data length, got nil")
 		}
 
-		// Test with mismatched dimensions
-		invalidQuery := []float32{1.0, 2.0} // Different dimension from data
+		invalidQuery := []float32{1.0, 2.0}
 		invalidQueryTensor := &Tensor[float32]{}
 		_ = invalidQueryTensor.New(invalidQuery)
 
@@ -129,7 +121,6 @@ func TestSearch(t *testing.T) {
 }
 
 func BenchmarkSearch(b *testing.B) {
-	// Prepare larger dataset for benchmarking
 	data := make([][]float32, 10000)
 	for i := range data {
 		data[i] = make([]float32, 128)
@@ -172,7 +163,6 @@ func BenchmarkSearch(b *testing.B) {
 }
 
 func BenchmarkLargeMultithreadedSearch(b *testing.B) {
-	// Prepare larger dataset for benchmarking
 	data := make([][]float32, 10000)
 	for i := range data {
 		data[i] = make([]float32, 128)
