@@ -50,15 +50,17 @@ v.New(vector)
 s := &knn.Search{
 	Data: m,		  // 2D Tensor 
 	Query: v,		  // 1D Tensor
-	Multithread: true,	  // Enable Multithreading (default = false)
+	Multithread: true,	  // Enable Multithreading (default = false), MIPS not supported
 	MaxWorkers:  m.Shape[0],  // Specify MaxWorkers (default = n_cpu_cores)
 }
 ```
 
 **Search Options**
-* L1Distance(Manhattan)
-* L2Distance(Euclidean)
-* MIPS (Maximum Inner Product Search)
+|fn|speed|accuracy|
+|-|-|-|
+|L1|1|3|
+|L2|3|1|
+|MIPS|2|2|
 ```go
 nearest_neighbors, err := s.L1(2) 	// L1, k=2
 nearest_neighbors, err := s.L2(1) 	// L2, k=1
