@@ -28,7 +28,7 @@ const (
 )
 
 func (s *Search[T]) L1(k int) (Neighbors[T], error) {
-	if err := s.checker(); err != nil {
+	if err := s.checker(k); err != nil {
 		return Neighbors[T]{}, err
 	}
 
@@ -79,7 +79,7 @@ func (s *Search[T]) L1(k int) (Neighbors[T], error) {
 }
 
 func (s *Search[T]) L2(k int) (Neighbors[T], error) {
-	if err := s.checker(); err != nil {
+	if err := s.checker(k); err != nil {
 		return Neighbors[T]{}, err
 	}
 
@@ -98,7 +98,7 @@ func (s *Search[T]) L2(k int) (Neighbors[T], error) {
 }
 
 func (s *Search[T]) MIPS(k int, opts ...interface{}) (Neighbors[T], error) {
-	if err := s.checker(); err != nil {
+	if err := s.checker(k); err != nil {
 		return Neighbors[T]{}, err
 	}
 
@@ -178,23 +178,26 @@ func (s *Search[T]) MIPS(k int, opts ...interface{}) (Neighbors[T], error) {
 	indices := make([]int, k)
 	values := make([]T, k)
 	for i := 0; i < k; i++ {
-		maxValue := T(-1)
+		maxValue := T(-1e9)
 		maxIndex := -1
-		for j := 0; j < L; j++ {
-			if V[j] > maxValue {
-				maxValue = V[j]
-				maxIndex = A[j]
+		for j := 0; j < N; j++ {
+			if scores[j] > maxValue {
+				maxValue = scores[j]
+				maxIndex = j
 			}
 		}
 		indices[i] = maxIndex
 		values[i] = maxValue
-		V[maxIndex>>uint(bs)] = T(-1)
+		scores[maxIndex] = T(-1e9) // Mark this score as used
 	}
 
 	return Neighbors[T]{Values: values, Indices: indices}, nil
 }
 
-func (s *Search[T]) checker() error {
+func (s *Search[T]) checker(k int) error {
+	if k <= 0 || k > len(s.Data.Values.([][]T)) {
+		return errors.New("k must be greater than 0 and less than the length of the data")
+	}
 	if s.Data == nil || s.Query == nil {
 		return errors.New("data and query tensors must be initialized")
 	}

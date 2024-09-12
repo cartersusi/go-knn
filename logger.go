@@ -1,6 +1,10 @@
 package knn
 
-import "log"
+import (
+	"bytes"
+	"log"
+	"sync"
+)
 
 const (
 	reset  = "\033[0m"
@@ -17,24 +21,38 @@ const (
 	Error
 )
 
-var logLevels = map[int]string{
-	Info:    "INFO",
-	Debug:   "DEBUG",
-	Warning: "WARNING",
-	Error:   "ERROR",
+var logLevels = [...]string{
+	"INFO",
+	"DEBUG",
+	"WARNING",
+	"ERROR",
 }
 
-var logColors = map[int]string{
-	Info:    green,
-	Debug:   blue,
-	Warning: yellow,
-	Error:   red,
+var logColors = [...]string{
+	green,
+	blue,
+	yellow,
+	red,
+}
+
+var bufferPool = sync.Pool{
+	New: func() interface{} {
+		return new(bytes.Buffer)
+	},
 }
 
 func Log(msg string, level int) {
-	color, exists := logColors[level]
-	if !exists {
-		color = reset
-	}
-	log.Printf("%s[%s] %s%s\n", color, logLevels[level], msg, reset)
+	buf := bufferPool.Get().(*bytes.Buffer)
+	defer bufferPool.Put(buf)
+	buf.Reset()
+
+	buf.WriteString(logColors[level])
+	buf.WriteByte('[')
+	buf.WriteString(logLevels[level])
+	buf.WriteString("] ")
+	buf.WriteString(msg)
+	buf.WriteString(reset)
+	buf.WriteByte('\n')
+
+	log.Output(2, buf.String())
 }

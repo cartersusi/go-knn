@@ -1,2 +1,5 @@
 *.sum
-*.py
+venv/
+go-knn
+jax_check/
+requirements.txt

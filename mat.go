@@ -80,13 +80,13 @@ func (s *Search[T]) HalfNorm() []T {
 
 		worker := func(s *Search[T], i int, wg *sync.WaitGroup) {
 			defer wg.Done()
-			halfnorm := T(0)
+			norm := T(0)
 			for j := 0; j < dCols; j++ {
-				halfnorm += s.Data.Values.([][]T)[i][j] * s.Data.Values.([][]T)[i][j]
+				norm += s.Data.Values.([][]T)[i][j] * s.Data.Values.([][]T)[i][j]
 			}
 
 			mu.Lock()
-			result[i] = halfnorm * 0.5
+			result[i] = norm * T(0.5)
 			mu.Unlock()
 
 			<-sem
@@ -105,11 +105,11 @@ func (s *Search[T]) HalfNorm() []T {
 	}
 
 	for i := 0; i < dRows; i++ {
-		halfnorm := T(0)
+		norm := T(0)
 		for j := 0; j < dCols; j++ {
-			halfnorm += s.Data.Values.([][]T)[i][j] * s.Data.Values.([][]T)[i][j]
+			norm += s.Data.Values.([][]T)[i][j] * s.Data.Values.([][]T)[i][j]
 		}
-		result[i] = halfnorm * 0.5
+		result[i] = norm * T(0.5)
 	}
 
 	return result

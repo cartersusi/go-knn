@@ -7,24 +7,25 @@ import (
 
 type Tensor[T float32 | float64] struct {
 	Values interface{}
-	Shape  []int
+	Shape  [2]int
 	Type   reflect.Type
 	Rank   int
 }
 
-var validScalarTypes = map[reflect.Type]reflect.Type{
-	reflect.TypeOf(float32(0)): reflect.TypeOf(float32(0)),
-	reflect.TypeOf(float64(0)): reflect.TypeOf(float64(0)),
-}
-
 func (t *Tensor[T]) New(values interface{}) error {
 	v := reflect.ValueOf(values)
+	if v.Len() < 1 {
+		return fmt.Errorf("empty values")
+	}
 
 	rank := 0
-	shape := []int{}
+	var shape [2]int
 
 	for v.Kind() == reflect.Slice {
-		shape = append(shape, v.Len())
+		if rank >= 2 {
+			return fmt.Errorf("unsupported rank: %d", rank+1)
+		}
+		shape[rank] = v.Len()
 		v = v.Index(0)
 		rank++
 	}
@@ -33,24 +34,17 @@ func (t *Tensor[T]) New(values interface{}) error {
 		return fmt.Errorf("empty values")
 	}
 
-	if rank > 2 || rank < 1 {
-		return fmt.Errorf("unsupported rank: %d", rank)
-	}
-
-	dtype, ok := validScalarTypes[v.Type()]
-	if !ok {
+	switch v.Kind() {
+	case reflect.Float32, reflect.Float64:
+		// Valid type
+	default:
 		return fmt.Errorf("unsupported type: %v", v.Type())
 	}
 
-	if rank == 1 {
-		t.Values = values.([]T)
-	} else {
-		t.Values = values.([][]T)
-	}
-
+	t.Values = values
 	t.Shape = shape
 	t.Rank = rank
-	t.Type = dtype
+	t.Type = v.Type()
 
 	return nil
 }
