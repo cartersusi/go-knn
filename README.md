@@ -1,6 +1,9 @@
 # Go KNN
 [![Go Reference](https://pkg.go.dev/badge/github.com/cartersusi/go-knn.svg)](https://pkg.go.dev/github.com/cartersusi/go-knn)
 
+## TODO
+- SIMD
+
 ---
 
 For more advanced GPU implementations, see:
