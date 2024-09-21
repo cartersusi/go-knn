@@ -1,4 +1,3 @@
-*.sum
 venv/
 go-knn
 jax_check/
