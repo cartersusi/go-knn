@@ -18,6 +18,11 @@ jobs:
       with:
         go-version: '1.22.5'
 
+    - name: Install dependencies
+      run: |
+        go get github.com/alivanz/go-simd/arm
+        go mod tidy
+
     - name: Build
       run: go build -v ./...
 
