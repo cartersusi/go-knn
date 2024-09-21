@@ -158,14 +158,35 @@ func main() {
 	fmt.Println("Values:", nn.Values)
 }
 ```
-Output:
+
+## Runtime vs Precision
+
 ```
-Query Sentence: I am a scientist who enjoys fishing when I'm not in the lab.
-Nearerst neighbor[0]: The scientist enjoys conducting experiments in the laboratory.
-Nearerst neighbor[1]: The sailor enjoys sailing on a boat in the sea.
-Indices: [5 0]
-Values: [0.877427339553833 0.828193724155426]
+Matrix Shape [10000 10000]
+Vector Shape [10000 0]
+
+SIMD Multi: 39.618291ms
+SIMD No-Multi: 160.327917ms
+No-SIMD Multi: 92.002166ms
+No-SIMD No-Multi: 553.475792ms
+
+SIMD Multi
+Indices: [2034 2159]
+Values: [3217.4016 3240.66]
+
+SIMD No-Multi
+Indices: [2034 2159]
+Values: [3217.4016 3240.66]
+
+No-SIMD Multi
+Indices: [2034 2159]
+Values: [3217.404 3240.6638]
+
+No-SIMD No-Multi
+Indices: [2034 2159]
+Values: [3217.404 3240.6638]
 ```
+
 
 ## Sources:
 **[TPU-KNN: K Nearest Neighbor Search at Peak FLOP/s](https://arxiv.org/abs/2206.14286)**

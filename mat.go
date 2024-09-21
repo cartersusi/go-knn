@@ -14,29 +14,14 @@ func (s *Search[T]) Manhattan(i *int) T {
 
 	if s.SIMD {
 		var sum T
-		for j := 0; j < len(query); j += 4 {
+		n := len(query)
+		for j := 0; j < n-3; j += 4 {
 			var a, b arm.Float32X4
 			var sub, abs arm.Float32X4
 
-			if j+3 < len(query) {
-				for k := 0; k < 4; k++ {
-					a[k] = arm.Float32(query[j+k])
-					b[k] = arm.Float32(data[j+k])
-				}
-			} else {
-				for k := 0; k < 4; k++ {
-					if j+k < len(query) {
-						a[k] = arm.Float32(query[j+k])
-						b[k] = arm.Float32(data[j+k])
-					} else {
-						neon.VsubqF32(&sub, &a, &b)
-						neon.VabsqF32(&abs, &sub)
-						for l := 0; l < k; l++ {
-							sum += T(abs[l])
-						}
-						return sum
-					}
-				}
+			for k := 0; k < 4; k++ {
+				a[k] = arm.Float32(query[j+k])
+				b[k] = arm.Float32(data[j+k])
 			}
 
 			neon.VsubqF32(&sub, &a, &b)
@@ -45,13 +30,39 @@ func (s *Search[T]) Manhattan(i *int) T {
 				sum += T(abs[l])
 			}
 		}
+
+		for j := n - n%4; j < n; j++ {
+			sum += Abs(query[j] - data[j])
+		}
+
 		return sum
 	}
 
+	if len(query) > 128 {
+		return s.manhattanUnrolled(query, data)
+	}
 	var sum T
 	for j := 0; j < len(query); j++ {
 		sum += Abs(query[j] - data[j])
 	}
+	return sum
+}
+
+func (s *Search[T]) manhattanUnrolled(query, data []T) T {
+	var sum T
+	n := len(query)
+
+	for j := 0; j < n-3; j += 4 {
+		sum += Abs(query[j]-data[j]) +
+			Abs(query[j+1]-data[j+1]) +
+			Abs(query[j+2]-data[j+2]) +
+			Abs(query[j+3]-data[j+3])
+	}
+
+	for j := n - n%4; j < n; j++ {
+		sum += Abs(query[j] - data[j])
+	}
+
 	return sum
 }
 
