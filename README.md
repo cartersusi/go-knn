@@ -2,11 +2,12 @@
 [![Go Reference](https://pkg.go.dev/badge/github.com/cartersusi/go-knn.svg)](https://pkg.go.dev/github.com/cartersusi/go-knn)
 
 ## TODO
-- SIMD
+- CI for SIMD
+- MIPS multithread and SIMD
 
 ---
 
-For more advanced GPU implementations, see:
+For GPU implementations, see:
 * FAISS - https://github.com/facebookresearch/faiss
 * Annoy - https://github.com/spotify/annoy
 
@@ -48,6 +49,10 @@ v.New(vector)
 ```
 
 ### Searching
+
+Supported SIMD:
+* ARM NEON, see more at [go-simd](https://github.com/alivanz/go-simd)
+
 **New Instance**
 ```go
 s := &knn.Search{
@@ -59,21 +64,9 @@ s := &knn.Search{
 }
 ```
 
-**Search Options**
-|fn|speed|accuracy|
-|-|-|-|
-|L1|1|3|
-|L2|3|1|
-|MIPS|2|2|
-```go
-nearest_neighbors, err := s.L1(2) 	// L1, k=2
-nearest_neighbors, err := s.L2(1) 	// L2, k=1
-nearest_neighbors, err := s.MIPS(4, 2) 	// MIPS, k=4, bin_size=2
-```
-
 **New Query**
 
-Seach.Query stores the address of a 1D Tensor, so it can be quickly changed for a new iteration.
+Seach.Query uses the address of a 1D Tensor, so it can be quickly changed for a new iteration.
 ```go
 for query := range all_queries {
 	s.Query = query
@@ -147,13 +140,13 @@ func main() {
 	q.New(vector)
 
 	s := &knn.Search[float32]{
-		Data:  d,
-		Query: q,
+		Data:        d,
+		Query:       q,
 		SIMD:        true,
 		Multithread: true,
 	}
 
-	nn, err := s.MIPS(2, 1)
+	nn, err := s.L1(2)
 	if err != nil {
 		fmt.Println(err)
 	}

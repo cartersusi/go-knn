@@ -18,49 +18,15 @@ jobs:
       with:
         go-version: '1.22.5'
 
-    - name: Install ARM development tools
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y gcc-arm-linux-gnueabi libc6-dev-armel-cross
-
-    - name: Create custom types header
-      run: |
-        cat << EOF > custom_types.h
-        #ifndef CUSTOM_TYPES_H
-        #define CUSTOM_TYPES_H
-
-        #include <stdint.h>
-
-        typedef double float64_t;
-        typedef double float64x1_t __attribute__ ((vector_size (8)));
-        typedef double float64x2_t __attribute__ ((vector_size (16)));
-
-        #endif // CUSTOM_TYPES_H
-        EOF
-
     - name: Install dependencies
       run: |
         go get github.com/alivanz/go-simd/arm
         go mod tidy
 
     - name: Build
-      env:
-        CC: arm-linux-gnueabi-gcc
-        GOARCH: arm
-        GOARM: 7
-        CGO_ENABLED: 1
-        CGO_CFLAGS: "-march=armv7-a -mfpu=neon -mfloat-abi=softfp -I."
-        CGO_LDFLAGS: "-march=armv7-a -mfpu=neon -mfloat-abi=softfp"
       run: go build -v ./...
 
     - name: Test
-      env:
-        CC: arm-linux-gnueabi-gcc
-        GOARCH: arm
-        GOARM: 7
-        CGO_ENABLED: 1
-        CGO_CFLAGS: "-march=armv7-a -mfpu=neon -mfloat-abi=softfp -I."
-        CGO_LDFLAGS: "-march=armv7-a -mfpu=neon -mfloat-abi=softfp"
       run: go test -v ./...
 
   status-check:
