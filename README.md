@@ -189,5 +189,7 @@ Values: [3226.6335 3252.8088]
 
 ## Sources:
 **[TPU-KNN: K Nearest Neighbor Search at Peak FLOP/s](https://arxiv.org/abs/2206.14286)**
+
 **[go-simd](https://github.com/alivanz/go-simd)**
+
 **[slow-to-simd](https://sourcegraph.com/blog/slow-to-simd)**
