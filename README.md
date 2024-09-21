@@ -159,36 +159,34 @@ func main() {
 }
 ```
 
-## Runtime vs Precision
-
+## Runtimes (M1 Mac)
 ```
 Matrix Shape [10000 10000]
 Vector Shape [10000 0]
 
-SIMD Multi: 39.618291ms
-SIMD No-Multi: 160.327917ms
-No-SIMD Multi: 92.002166ms
-No-SIMD No-Multi: 553.475792ms
+SIMD Multithread: 41.213166ms
+SIMD : 223.483208ms
+Unrolled Multithread: 111.073541ms
+Unrolled: 627.538667ms
 
-SIMD Multi
-Indices: [2034 2159]
-Values: [3217.4016 3240.66]
+SIMD Multithread
+Indices: [5833 2932]
+Values: [3226.6335 3252.8088]
 
-SIMD No-Multi
-Indices: [2034 2159]
-Values: [3217.4016 3240.66]
+SIMD
+Indices: [5833 2932]
+Values: [3226.6335 3252.8088]
 
-No-SIMD Multi
-Indices: [2034 2159]
-Values: [3217.404 3240.6638]
+Unrolled Multithread
+Indices: [5833 2932]
+Values: [3226.6335 3252.8088]
 
-No-SIMD No-Multi
-Indices: [2034 2159]
-Values: [3217.404 3240.6638]
+Unrolled
+Indices: [5833 2932]
+Values: [3226.6335 3252.8088]
 ```
 
 
 ## Sources:
 **[TPU-KNN: K Nearest Neighbor Search at Peak FLOP/s](https://arxiv.org/abs/2206.14286)**
-
 **[go-simd](https://github.com/alivanz/go-simd)**
