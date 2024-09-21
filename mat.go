@@ -3,12 +3,54 @@ package knn
 import (
 	"runtime"
 	"sync"
+
+	"github.com/alivanz/go-simd/arm"
+	"github.com/alivanz/go-simd/arm/neon"
 )
 
 func (s *Search[T]) Manhattan(i *int) T {
+	query := s.Query.Values.([]T)
+	data := s.Data.Values.([][]T)[*i]
+
+	if s.SIMD {
+		var sum T
+		for j := 0; j < len(query); j += 4 {
+			var a, b arm.Float32X4
+			var sub, abs arm.Float32X4
+
+			if j+3 < len(query) {
+				for k := 0; k < 4; k++ {
+					a[k] = arm.Float32(query[j+k])
+					b[k] = arm.Float32(data[j+k])
+				}
+			} else {
+				for k := 0; k < 4; k++ {
+					if j+k < len(query) {
+						a[k] = arm.Float32(query[j+k])
+						b[k] = arm.Float32(data[j+k])
+					} else {
+						neon.VsubqF32(&sub, &a, &b)
+						neon.VabsqF32(&abs, &sub)
+						for l := 0; l < k; l++ {
+							sum += T(abs[l])
+						}
+						return sum
+					}
+				}
+			}
+
+			neon.VsubqF32(&sub, &a, &b)
+			neon.VabsqF32(&abs, &sub)
+			for l := 0; l < 4; l++ {
+				sum += T(abs[l])
+			}
+		}
+		return sum
+	}
+
 	var sum T
-	for j := 0; j < len(s.Query.Values.([]T)); j++ {
-		sum += Abs(s.Query.Values.([]T)[j] - s.Data.Values.([][]T)[*i][j])
+	for j := 0; j < len(query); j++ {
+		sum += Abs(query[j] - data[j])
 	}
 	return sum
 }

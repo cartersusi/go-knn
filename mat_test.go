@@ -14,6 +14,7 @@ func TestManhattan(t *testing.T) {
 		query    []float32
 		index    int
 		expected float32
+		SIMD     bool
 	}{
 		{
 			name:     "Basic test",
@@ -21,13 +22,15 @@ func TestManhattan(t *testing.T) {
 			query:    []float32{1, 1, 1},
 			index:    0,
 			expected: 3,
+			SIMD:     false,
 		},
 		{
 			name:     "Zero vector",
-			data:     [][]float32{{0, 0, 0}, {1, 1, 1}},
 			query:    []float32{0, 0, 0},
+			data:     [][]float32{{0, 0, 0}, {1, 1, 1}},
 			index:    1,
 			expected: 3,
+			SIMD:     false,
 		},
 		{
 			name:     "Negative values",
@@ -35,6 +38,23 @@ func TestManhattan(t *testing.T) {
 			query:    []float32{0, 0, 0},
 			index:    0,
 			expected: 6,
+			SIMD:     false,
+		},
+		{
+			name:     "SIMD test with larger dataset",
+			data:     [][]float32{{1, 2, 3, 4, 5, 6, 7, 8}, {9, 10, 11, 12, 13, 14, 15, 16}},
+			query:    []float32{0, 1, 2, 3, 4, 5, 6, 7},
+			index:    0,
+			expected: 8,
+			SIMD:     true,
+		},
+		{
+			name:     "Large values test",
+			data:     [][]float32{{1e6, 2e6, 3e6, 4e6}, {5e6, 6e6, 7e6, 8e6}},
+			query:    []float32{1e5, 2e5, 3e5, 4e5},
+			index:    0,
+			expected: 9e6,
+			SIMD:     true,
 		},
 	}
 
@@ -43,6 +63,7 @@ func TestManhattan(t *testing.T) {
 			s := &Search[float32]{
 				Data:  &Tensor[float32]{Values: tt.data},
 				Query: &Tensor[float32]{Values: tt.query},
+				SIMD:  tt.SIMD,
 			}
 			result := s.Manhattan(&tt.index)
 			if result != tt.expected {

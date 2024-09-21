@@ -14,6 +14,7 @@ type Search[T float32 | float64] struct {
 	Query       *Tensor[T]
 	Multithread bool
 	MaxWorkers  int
+	SIMD        bool
 }
 
 type Neighbors[T any] struct {
@@ -40,31 +41,34 @@ func (s *Search[T]) L1(k int) (Neighbors[T], error) {
 			s.MaxWorkers = runtime.NumCPU()
 		}
 		n_tasks := len(s.Data.Values.([][]T))
-		results := make([]T, n_tasks)
 
 		var wg sync.WaitGroup
-		sem := make(chan struct{}, s.MaxWorkers)
+		results := make(chan struct {
+			index    int
+			distance T
+		}, n_tasks)
 
-		worker := func(s *Search[T], i int, wg *sync.WaitGroup) {
+		worker := func(s *Search[T], i int) {
 			defer wg.Done()
-			results[i] = s.Manhattan(&i)
-			<-sem
+			distance := s.Manhattan(&i)
+			results <- struct {
+				index    int
+				distance T
+			}{i, distance}
 		}
 
 		for i := 0; i < n_tasks; i++ {
-			sem <- struct{}{}
 			wg.Add(1)
-			go worker(s, i, &wg)
+			go worker(s, i)
 		}
 
 		go func() {
 			wg.Wait()
-			close(sem)
+			close(results)
 		}()
 
-		for i, distance := range results {
-			h.Process(&i, &k, &distance)
-			i++
+		for result := range results {
+			h.Process(&result.index, &k, &result.distance)
 		}
 
 		return s.ret(&k, h)

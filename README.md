@@ -55,6 +55,7 @@ s := &knn.Search{
 	Query: v,		  // 1D Tensor
 	Multithread: true,	  // Enable Multithreading (default = false), MIPS not supported
 	MaxWorkers:  m.Shape[0],  // Specify MaxWorkers (default = n_cpu_cores)
+	SIMD: true //Use SIMD operations, uses float32, it will cast you floats to float32 if using float64
 }
 ```
 
@@ -80,7 +81,7 @@ for query := range all_queries {
 }
 ```
 
-## Example using OpenAI Ada (MIPS)
+## Example using OpenAI Ada (L1)
 ```go
 package main
 
@@ -148,6 +149,8 @@ func main() {
 	s := &knn.Search[float32]{
 		Data:  d,
 		Query: q,
+		SIMD:        true,
+		Multithread: true,
 	}
 
 	nn, err := s.MIPS(2, 1)
