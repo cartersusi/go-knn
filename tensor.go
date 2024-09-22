@@ -103,7 +103,7 @@ func (t *Tensor[T]) GobDecode(buf []byte) error {
 	return nil
 }
 
-func SaveTensor[T float32 | float64](t *Tensor[T], filename string) error {
+func Export[T float32 | float64](t *Tensor[T], filename string) error {
 	file, err := os.Create(filename)
 	if err != nil {
 		return fmt.Errorf("error creating file: %v", err)
@@ -118,7 +118,7 @@ func SaveTensor[T float32 | float64](t *Tensor[T], filename string) error {
 	return nil
 }
 
-func LoadTensor[T float32 | float64](filename string) (*Tensor[T], error) {
+func Import[T float32 | float64](filename string) (*Tensor[T], error) {
 	file, err := os.Open(filename)
 	if err != nil {
 		return nil, fmt.Errorf("error opening file: %v", err)

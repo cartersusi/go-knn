@@ -48,6 +48,15 @@ v := &knn.Tensor[float32]{}
 v.New(vector)
 ```
 
+**Import/Export**
+```go
+v, err := knn.Import[float32]("vector.tensor")
+```
+
+```go
+err = knn.Export(data, "data.tensor")
+```
+
 ### Searching
 
 Supported SIMD:
